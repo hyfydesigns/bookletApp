@@ -5,6 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import Link from "next/link";
 import { Building2, Plus, Users, CalendarDays } from "lucide-react";
 import { CreateOrgDialog } from "@/components/admin/create-org-dialog";
+import { DeleteWithBackupDialog } from "@/components/admin/delete-with-backup-dialog";
 
 export default async function OrganizationsPage() {
   const orgs = await getOrganizations();
@@ -36,22 +37,30 @@ export default async function OrganizationsPage() {
         {orgs.map((org) => (
           <Card key={org.id} className="hover:border-primary/50 transition-colors">
             <CardHeader className="pb-3">
-              <div className="flex items-start justify-between">
-                <div className="flex items-center gap-3">
+              <div className="flex items-start justify-between gap-2">
+                <div className="flex items-center gap-3 min-w-0 flex-1">
                   {org.logoUrl ? (
-                    <img src={org.logoUrl} alt={org.name} className="h-10 w-10 rounded-md object-cover" />
+                    <img src={org.logoUrl} alt={org.name} className="h-10 w-10 rounded-md object-cover flex-shrink-0" />
                   ) : (
-                    <div className="h-10 w-10 rounded-md bg-primary/10 flex items-center justify-center">
+                    <div className="h-10 w-10 rounded-md bg-primary/10 flex items-center justify-center flex-shrink-0">
                       <Building2 className="h-5 w-5 text-primary" />
                     </div>
                   )}
-                  <div>
-                    <CardTitle className="text-base">{org.name}</CardTitle>
+                  <div className="min-w-0">
+                    <CardTitle className="text-base truncate">{org.name}</CardTitle>
                     {org.contactPerson && (
-                      <p className="text-xs text-muted-foreground">{org.contactPerson}</p>
+                      <p className="text-xs text-muted-foreground truncate">{org.contactPerson}</p>
                     )}
                   </div>
                 </div>
+                <DeleteWithBackupDialog
+                  type="organization"
+                  id={org.id}
+                  name={org.name}
+                  summary={`${org._count.events} event${org._count.events !== 1 ? "s" : ""} · ${org._count.users} user${org._count.users !== 1 ? "s" : ""}`}
+                  redirectTo="/admin/organizations"
+                  variant="icon"
+                />
               </div>
             </CardHeader>
             <CardContent className="space-y-3">

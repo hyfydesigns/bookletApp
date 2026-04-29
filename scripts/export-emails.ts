@@ -12,7 +12,7 @@ async function main() {
   const templates = [
     {
       name: "invite",
-      html: await render(InviteEmail({ inviteLink: "{{ .ConfirmationURL }}" })),
+      html: await render(InviteEmail({ inviteLink: "{{ .SiteURL }}/auth/confirm?token_hash={{ .TokenHash }}&type=invite" })),
     },
     {
       name: "confirm-signup",

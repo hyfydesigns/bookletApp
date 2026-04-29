@@ -102,6 +102,7 @@ model User {
   notifications  Notification[]
   frontContents  FrontSectionContent[]
   events         Event[]
+  backups        Backup[]
 
   @@map("users")
 }
@@ -122,7 +123,7 @@ model Event {
   createdAt         DateTime    @default(now())
   updatedAt         DateTime    @updatedAt
 
-  organization  Organization          @relation(fields: [organizationId], references: [id])
+  organization  Organization          @relation(fields: [organizationId], references: [id], onDelete: Cascade)
   createdBy     User                  @relation(fields: [createdById], references: [id])
   ads           Ad[]
   frontContents FrontSectionContent[]
@@ -175,7 +176,7 @@ model Ad {
 
   event            Event  @relation(fields: [eventId], references: [id], onDelete: Cascade)
   submittedBy      User?  @relation(fields: [submittedById], references: [id])
-  sharedPageWithAd Ad?    @relation("SharedPage", fields: [sharedPageWithAdId], references: [id])
+  sharedPageWithAd Ad?    @relation("SharedPage", fields: [sharedPageWithAdId], references: [id], onDelete: SetNull)
   sharedPageAds    Ad[]   @relation("SharedPage")
 
   @@map("ads")
@@ -194,4 +195,17 @@ model Notification {
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@map("notifications")
+}
+
+model Backup {
+  id          String   @id @default(cuid())
+  type        String
+  name        String
+  data        Json
+  createdById String
+  createdAt   DateTime @default(now())
+
+  createdBy User @relation(fields: [createdById], references: [id])
+
+  @@map("backups")
 }

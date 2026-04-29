@@ -9,6 +9,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { UpdateEventStatusSelect } from "@/components/admin/update-event-status";
 import { EditEventDialog } from "@/components/admin/edit-event-dialog";
+import { DeleteWithBackupDialog } from "@/components/admin/delete-with-backup-dialog";
 
 export default async function AdminEventDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -37,6 +38,13 @@ export default async function AdminEventDetailPage({ params }: { params: Promise
         <div className="flex items-center gap-2">
           <EditEventDialog event={event} />
           <UpdateEventStatusSelect eventId={id} currentStatus={event.status} />
+          <DeleteWithBackupDialog
+            type="event"
+            id={event.id}
+            name={event.name}
+            summary={`${event.ads.length} ad${event.ads.length !== 1 ? "s" : ""} · ${event.organization.name}`}
+            redirectTo="/admin/events"
+          />
         </div>
       </div>
 

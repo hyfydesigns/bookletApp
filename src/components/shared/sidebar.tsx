@@ -12,6 +12,7 @@ import {
   BarChart3,
   BookOpen,
   Bell,
+  ArchiveRestore,
 } from "lucide-react";
 
 interface NavItem {
@@ -27,6 +28,7 @@ const adminNav: NavItem[] = [
   { href: "/admin/ads", label: "Ad Queue", icon: FileImage },
   { href: "/admin/reports", label: "Reports", icon: BarChart3 },
   { href: "/admin/users", label: "Users", icon: Users },
+  { href: "/admin/backups", label: "Backups", icon: ArchiveRestore },
 ];
 
 const organizerNav: NavItem[] = [

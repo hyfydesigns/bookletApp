@@ -7,6 +7,7 @@ import { formatDate } from "@/lib/utils";
 import { CalendarDays, MapPin, FileImage } from "lucide-react";
 import Link from "next/link";
 import { CreateEventDialog } from "@/components/admin/create-event-dialog";
+import { DeleteWithBackupDialog } from "@/components/admin/delete-with-backup-dialog";
 
 export default async function AdminEventsPage() {
   const [events, orgs] = await Promise.all([getEvents(), getOrganizations()]);
@@ -68,6 +69,14 @@ export default async function AdminEventsPage() {
                   <Link href={`/admin/events/${event.id}`}>
                     <Button variant="outline" size="sm">Manage</Button>
                   </Link>
+                  <DeleteWithBackupDialog
+                    type="event"
+                    id={event.id}
+                    name={event.name}
+                    summary={`${event._count.ads} ad${event._count.ads !== 1 ? "s" : ""} · ${event.organization.name}`}
+                    redirectTo="/admin/events"
+                    variant="icon"
+                  />
                 </div>
               </div>
             </CardContent>

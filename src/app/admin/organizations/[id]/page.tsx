@@ -7,6 +7,7 @@ import { Building2, Mail, Phone, MapPin, CalendarDays, ArrowLeft } from "lucide-
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { OrgMembersCard } from "@/components/admin/add-user-to-org-dialog";
+import { DeleteWithBackupDialog } from "@/components/admin/delete-with-backup-dialog";
 
 export default async function OrgDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -15,16 +16,25 @@ export default async function OrgDetailPage({ params }: { params: Promise<{ id: 
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center gap-4">
-        <Link href="/admin/organizations">
-          <Button variant="ghost" size="sm">
-            <ArrowLeft className="h-4 w-4 mr-1" /> Back
-          </Button>
-        </Link>
-        <div>
-          <h2 className="text-2xl font-bold">{org.name}</h2>
-          <p className="text-muted-foreground">{org.events.length} events</p>
+      <div className="flex items-center justify-between gap-4">
+        <div className="flex items-center gap-4">
+          <Link href="/admin/organizations">
+            <Button variant="ghost" size="sm">
+              <ArrowLeft className="h-4 w-4 mr-1" /> Back
+            </Button>
+          </Link>
+          <div>
+            <h2 className="text-2xl font-bold">{org.name}</h2>
+            <p className="text-muted-foreground">{org.events.length} events</p>
+          </div>
         </div>
+        <DeleteWithBackupDialog
+          type="organization"
+          id={org.id}
+          name={org.name}
+          summary={`${org.events.length} event${org.events.length !== 1 ? "s" : ""} · ${org.users.length} user${org.users.length !== 1 ? "s" : ""}`}
+          redirectTo="/admin/organizations"
+        />
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
