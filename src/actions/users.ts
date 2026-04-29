@@ -4,6 +4,15 @@ import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/prisma";
 import { requireAdmin, syncSupabaseUser } from "@/lib/auth";
 import { z } from "zod";
+import { createClient } from "@supabase/supabase-js";
+
+function getAdminClient() {
+  return createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!,
+    { auth: { autoRefreshToken: false, persistSession: false } }
+  );
+}
 
 export async function syncUser() {
   return syncSupabaseUser();
@@ -25,19 +34,34 @@ export async function updateUserOrganization(
 export async function addUserToOrganizationByEmail(
   email: string,
   organizationId: string
-) {
+): Promise<{ invited: boolean; name: string | null }> {
   await requireAdmin();
-  const user = await prisma.user.findUnique({ where: { email } });
-  if (!user) throw new Error(`No account found for ${email}. They must sign up first.`);
-  if (user.organizationId === organizationId) throw new Error("User is already in this organization.");
 
-  const updated = await prisma.user.update({
-    where: { id: user.id },
+  const existingUser = await prisma.user.findUnique({ where: { email } });
+
+  if (existingUser) {
+    if (existingUser.organizationId === organizationId) {
+      throw new Error("User is already in this organization.");
+    }
+    await prisma.user.update({
+      where: { id: existingUser.id },
+      data: { organizationId },
+    });
+    revalidatePath(`/admin/organizations/${organizationId}`);
+    revalidatePath("/admin/users");
+    return { invited: false, name: existingUser.name };
+  }
+
+  // No account yet — send a Supabase invite with the org embedded in metadata
+  const supabase = getAdminClient();
+  const { error } = await supabase.auth.admin.inviteUserByEmail(email, {
     data: { organizationId },
+    redirectTo: `${process.env.NEXT_PUBLIC_APP_URL}/auth/callback?next=/dashboard`,
   });
+  if (error) throw new Error(`Failed to send invite: ${error.message}`);
+
   revalidatePath(`/admin/organizations/${organizationId}`);
-  revalidatePath("/admin/users");
-  return updated;
+  return { invited: true, name: null };
 }
 
 export async function removeUserFromOrganization(userId: string, organizationId: string) {

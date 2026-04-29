@@ -63,8 +63,12 @@ export function OrgMembersCard({ organizationId, members }: AddUserToOrgDialogPr
     setSuccess(null);
     setLoading(true);
     try {
-      const user = await addUserToOrganizationByEmail(email.trim(), organizationId);
-      setSuccess(`${user.name || user.email} added successfully.`);
+      const result = await addUserToOrganizationByEmail(email.trim(), organizationId);
+      if (result.invited) {
+        setSuccess(`Invite sent to ${email.trim()}. They'll be added to this organization when they sign up.`);
+      } else {
+        setSuccess(`${result.name || email.trim()} added successfully.`);
+      }
       setEmail("");
       router.refresh();
     } catch (err: unknown) {
@@ -106,7 +110,7 @@ export function OrgMembersCard({ organizationId, members }: AddUserToOrgDialogPr
                 {success && <p className="text-xs text-green-600">{success}</p>}
               </div>
               <p className="text-xs text-muted-foreground">
-                The user must already have a BookletFlow account. They will be assigned to this organization immediately.
+                If the user already has an account they'll be added immediately. Otherwise a signup invite will be sent and they'll be assigned to this organization when they sign up.
               </p>
               <div className="flex gap-3">
                 <Button type="button" variant="outline" onClick={() => setOpen(false)} className="flex-1">

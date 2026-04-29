@@ -48,12 +48,16 @@ export async function syncSupabaseUser() {
   });
   if (existing) return existing;
 
+  const organizationId: string | undefined =
+    supabaseUser.user_metadata?.organizationId ?? undefined;
+
   return prisma.user.create({
     data: {
       supabaseId: supabaseUser.id,
       name,
       email,
       role: "organizer",
+      ...(organizationId ? { organizationId } : {}),
     },
   });
 }
