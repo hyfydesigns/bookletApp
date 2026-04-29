@@ -2,19 +2,22 @@ import { getBackups, restoreBackup, deleteBackup } from "@/actions/backups";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { ArchiveRestore, Building2, CalendarDays, Trash2 } from "lucide-react";
-import { RestoreBackupButton, DeleteBackupButton } from "./actions";
+import { ArchiveRestore, Building2, CalendarDays } from "lucide-react";
+import { RestoreBackupButton, DeleteBackupButton, DownloadBackupButton, DownloadAllBackupsButton } from "./actions";
 
 export default async function BackupsPage() {
   const backups = await getBackups();
 
   return (
     <div className="space-y-6">
-      <div>
-        <h2 className="text-2xl font-bold">Backups</h2>
-        <p className="text-muted-foreground">
-          {backups.length} backup{backups.length !== 1 ? "s" : ""} — restore any deleted organization or event
-        </p>
+      <div className="flex items-center justify-between gap-4">
+        <div>
+          <h2 className="text-2xl font-bold">Backups</h2>
+          <p className="text-muted-foreground">
+            {backups.length} backup{backups.length !== 1 ? "s" : ""} — restore any deleted organization or event
+          </p>
+        </div>
+        {backups.length > 0 && <DownloadAllBackupsButton />}
       </div>
 
       {backups.length === 0 && (
@@ -71,6 +74,7 @@ export default async function BackupsPage() {
                   </div>
 
                   <div className="flex items-center gap-2 flex-shrink-0">
+                    <DownloadBackupButton id={backup.id} name={backup.name} />
                     <RestoreBackupButton id={backup.id} name={backup.name} />
                     <DeleteBackupButton id={backup.id} name={backup.name} />
                   </div>

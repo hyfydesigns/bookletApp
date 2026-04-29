@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Loader2, ArchiveRestore, Trash2 } from "lucide-react";
+import { Loader2, ArchiveRestore, Trash2, Download } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription,
@@ -68,6 +68,27 @@ export function RestoreBackupButton({ id, name }: { id: string; name: string }) 
         </DialogContent>
       </Dialog>
     </>
+  );
+}
+
+export function DownloadBackupButton({ id, name }: { id: string; name: string }) {
+  return (
+    <a href={`/api/backups/${id}/download`} download>
+      <Button variant="ghost" size="sm" title={`Download ${name}`}>
+        <Download className="h-4 w-4" />
+      </Button>
+    </a>
+  );
+}
+
+export function DownloadAllBackupsButton() {
+  return (
+    <a href="/api/backups/download" download>
+      <Button variant="outline" size="sm">
+        <Download className="h-4 w-4 mr-1.5" />
+        Download All
+      </Button>
+    </a>
   );
 }
 
