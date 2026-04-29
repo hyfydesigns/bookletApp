@@ -1,4 +1,4 @@
-import { getAd } from "@/actions/ads";
+import { getAd, getAds } from "@/actions/ads";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { AdStatusBadge, PaymentBadge } from "@/components/shared/status-badge";
@@ -8,6 +8,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { AdStatusManager } from "@/components/admin/ad-status-manager";
 import { PageAssignmentForm } from "@/components/admin/page-assignment-form";
+import { EditAdDialog } from "@/components/admin/edit-ad-dialog";
 
 export default async function AdDetailPage({
   params,
@@ -15,7 +16,7 @@ export default async function AdDetailPage({
   params: Promise<{ id: string; adId: string }>;
 }) {
   const { id, adId } = await params;
-  const ad = await getAd(adId);
+  const [ad, eventAds] = await Promise.all([getAd(adId), getAds(id)]);
   if (!ad) notFound();
 
   return (
@@ -34,6 +35,7 @@ export default async function AdDetailPage({
           </p>
         </div>
         <div className="flex items-center gap-2">
+          <EditAdDialog ad={{ id: ad.id, advertiserName: ad.advertiserName, contactPerson: ad.contactPerson, contactEmail: ad.contactEmail, contactPhone: ad.contactPhone, adMessage: ad.adMessage, notes: ad.notes, submittedFiles: ad.submittedFiles }} />
           <AdStatusBadge status={ad.adContentStatus} />
           <PaymentBadge status={ad.paymentStatus} />
         </div>
@@ -134,7 +136,11 @@ export default async function AdDetailPage({
 
         <div className="space-y-4">
           <AdStatusManager ad={{ id: ad.id, adContentStatus: ad.adContentStatus, paymentStatus: ad.paymentStatus, amountPaid: Number(ad.amountPaid), paymentAmount: Number(ad.paymentAmount), finalDesignUrl: ad.finalDesignUrl }} eventId={id} />
-          <PageAssignmentForm ad={{ id: ad.id, pageNumber: ad.pageNumber, pageSlot: ad.pageSlot, adType: ad.adType }} eventId={id} />
+          <PageAssignmentForm
+            ad={{ id: ad.id, pageNumber: ad.pageNumber, pageSlot: ad.pageSlot, adType: ad.adType, sharedPageWithAdId: ad.sharedPageWithAdId }}
+            eventAds={eventAds.map(a => ({ id: a.id, adCode: a.adCode, advertiserName: a.advertiserName, adType: a.adType, pageNumber: a.pageNumber, pageSlot: a.pageSlot }))}
+            eventId={id}
+          />
 
           {ad.finalDesignUrl && (
             <Card>

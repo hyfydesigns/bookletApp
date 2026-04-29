@@ -122,16 +122,81 @@ export async function updateAdPayment(
 
 export async function updateAdPageAssignment(
   id: string,
-  data: {
-    pageNumber: number | null;
-    pageSlot: "full" | "top" | "bottom" | null;
-    sharedPageWithAdId: string | null;
-  }
+  pageNumber: number | null,
 ) {
   await requireAdmin();
-  const ad = await prisma.ad.update({ where: { id }, data });
-  revalidatePath(`/admin/events/${ad.eventId}/ads`);
-  return ad;
+
+  const ad = await prisma.ad.findUnique({ where: { id } });
+  if (!ad) throw new Error("Ad not found");
+
+  // Clear old shared link if this ad was previously paired
+  if (ad.sharedPageWithAdId) {
+    await prisma.ad.update({
+      where: { id: ad.sharedPageWithAdId },
+      data: { sharedPageWithAdId: null, pageSlot: null },
+    });
+  }
+
+  if (!pageNumber) {
+    const updated = await prisma.ad.update({
+      where: { id },
+      data: { pageNumber: null, pageSlot: null, sharedPageWithAdId: null },
+    });
+    revalidatePath(`/admin/events/${updated.eventId}/ads`);
+    return updated;
+  }
+
+  if (ad.adType === "full_page") {
+    const updated = await prisma.ad.update({
+      where: { id },
+      data: { pageNumber, pageSlot: "full", sharedPageWithAdId: null },
+    });
+    revalidatePath(`/admin/events/${updated.eventId}/ads`);
+    return updated;
+  }
+
+  // Half page — check if another half-page ad is already on this page
+  const partner = await prisma.ad.findFirst({
+    where: {
+      eventId: ad.eventId,
+      adType: "half_page",
+      pageNumber,
+      id: { not: id },
+    },
+  });
+
+  if (partner) {
+    // Determine slots: give partner top if not yet assigned, this ad takes the other
+    const partnerSlot: "top" | "bottom" = partner.pageSlot === "bottom" ? "bottom" : "top";
+    const mySlot: "top" | "bottom" = partnerSlot === "top" ? "bottom" : "top";
+
+    // Clear any old partner link on the partner side first
+    if (partner.sharedPageWithAdId && partner.sharedPageWithAdId !== id) {
+      await prisma.ad.update({
+        where: { id: partner.sharedPageWithAdId },
+        data: { sharedPageWithAdId: null, pageSlot: null },
+      });
+    }
+
+    await prisma.ad.update({
+      where: { id: partner.id },
+      data: { pageNumber, pageSlot: partnerSlot, sharedPageWithAdId: id },
+    });
+    const updated = await prisma.ad.update({
+      where: { id },
+      data: { pageNumber, pageSlot: mySlot, sharedPageWithAdId: partner.id },
+    });
+    revalidatePath(`/admin/events/${updated.eventId}/ads`);
+    return updated;
+  }
+
+  // No partner — assign as top by default, waiting for a partner
+  const updated = await prisma.ad.update({
+    where: { id },
+    data: { pageNumber, pageSlot: "top", sharedPageWithAdId: null },
+  });
+  revalidatePath(`/admin/events/${updated.eventId}/ads`);
+  return updated;
 }
 
 export async function uploadFinalDesign(id: string, finalDesignUrl: string) {
