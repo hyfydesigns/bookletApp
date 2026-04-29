@@ -1,0 +1,197 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum Role {
+  admin
+  organizer
+}
+
+enum EventStatus {
+  draft
+  active
+  in_progress
+  completed
+  archived
+}
+
+enum ContentType {
+  president_photo
+  welcome_address
+  executives_list
+  committee_members
+  sponsors_list
+  event_details
+  other
+}
+
+enum ContentStatus {
+  pending
+  submitted
+  in_progress
+  done
+}
+
+enum AdType {
+  full_page
+  half_page
+}
+
+enum AdContentStatus {
+  pending
+  designing
+  complete
+}
+
+enum PaymentStatus {
+  unpaid
+  partial
+  received
+}
+
+enum PageSlot {
+  full
+  top
+  bottom
+}
+
+enum NotificationType {
+  new_ad
+  new_content
+  ad_status_change
+  payment_update
+  new_event
+}
+
+model Organization {
+  id             String    @id @default(cuid())
+  name           String
+  logoUrl        String?
+  contactPerson  String?
+  email          String?
+  phone          String?
+  address        String?
+  notes          String?
+  deletedAt      DateTime?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  users  User[]
+  events Event[]
+
+  @@map("organizations")
+}
+
+model User {
+  id             String   @id @default(cuid())
+  supabaseId     String   @unique
+  role           Role     @default(organizer)
+  organizationId String?
+  name           String
+  email          String   @unique
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  organization   Organization?         @relation(fields: [organizationId], references: [id])
+  ads            Ad[]
+  notifications  Notification[]
+  frontContents  FrontSectionContent[]
+  events         Event[]
+
+  @@map("users")
+}
+
+model Event {
+  id                String      @id @default(cuid())
+  organizationId    String
+  name              String
+  eventDate         DateTime?
+  location          String?
+  theme             String?
+  totalPages        Int         @default(20)
+  frontSectionPages Int         @default(4)
+  status            EventStatus @default(draft)
+  notes             String?
+  deletedAt         DateTime?
+  createdById       String
+  createdAt         DateTime    @default(now())
+  updatedAt         DateTime    @updatedAt
+
+  organization  Organization          @relation(fields: [organizationId], references: [id])
+  createdBy     User                  @relation(fields: [createdById], references: [id])
+  ads           Ad[]
+  frontContents FrontSectionContent[]
+
+  @@map("events")
+}
+
+model FrontSectionContent {
+  id            String        @id @default(cuid())
+  eventId       String
+  contentType   ContentType
+  title         String
+  bodyText      String?
+  fileUrls      String[]      @default([])
+  status        ContentStatus @default(pending)
+  submittedById String?
+  adminNotes    String?
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+
+  event       Event @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  submittedBy User? @relation(fields: [submittedById], references: [id])
+
+  @@map("front_section_content")
+}
+
+model Ad {
+  id                 String          @id @default(cuid())
+  adCode             String          @unique
+  eventId            String
+  adType             AdType
+  advertiserName     String
+  contactPerson      String?
+  contactEmail       String?
+  contactPhone       String?
+  adContentStatus    AdContentStatus @default(pending)
+  paymentStatus      PaymentStatus   @default(unpaid)
+  paymentAmount      Decimal         @default(0) @db.Decimal(10, 2)
+  amountPaid         Decimal         @default(0) @db.Decimal(10, 2)
+  pageNumber         Int?
+  pageSlot           PageSlot?
+  sharedPageWithAdId String?
+  submittedFiles     String[]        @default([])
+  finalDesignUrl     String?
+  adMessage          String?
+  notes              String?
+  submittedById      String?
+  createdAt          DateTime        @default(now())
+  updatedAt          DateTime        @updatedAt
+
+  event            Event  @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  submittedBy      User?  @relation(fields: [submittedById], references: [id])
+  sharedPageWithAd Ad?    @relation("SharedPage", fields: [sharedPageWithAdId], references: [id])
+  sharedPageAds    Ad[]   @relation("SharedPage")
+
+  @@map("ads")
+}
+
+model Notification {
+  id        String           @id @default(cuid())
+  userId    String
+  type      NotificationType
+  title     String
+  message   String
+  link      String?
+  isRead    Boolean          @default(false)
+  createdAt DateTime         @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("notifications")
+}
