@@ -22,6 +22,35 @@ export async function updateUserOrganization(
   return user;
 }
 
+export async function addUserToOrganizationByEmail(
+  email: string,
+  organizationId: string
+) {
+  await requireAdmin();
+  const user = await prisma.user.findUnique({ where: { email } });
+  if (!user) throw new Error(`No account found for ${email}. They must sign up first.`);
+  if (user.organizationId === organizationId) throw new Error("User is already in this organization.");
+
+  const updated = await prisma.user.update({
+    where: { id: user.id },
+    data: { organizationId },
+  });
+  revalidatePath(`/admin/organizations/${organizationId}`);
+  revalidatePath("/admin/users");
+  return updated;
+}
+
+export async function removeUserFromOrganization(userId: string, organizationId: string) {
+  await requireAdmin();
+  const updated = await prisma.user.update({
+    where: { id: userId },
+    data: { organizationId: null },
+  });
+  revalidatePath(`/admin/organizations/${organizationId}`);
+  revalidatePath("/admin/users");
+  return updated;
+}
+
 export async function updateUserRole(userId: string, role: "admin" | "organizer") {
   await requireAdmin();
   const user = await prisma.user.update({

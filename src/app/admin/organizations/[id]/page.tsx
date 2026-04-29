@@ -6,6 +6,7 @@ import { formatDate } from "@/lib/utils";
 import { Building2, Mail, Phone, MapPin, CalendarDays, ArrowLeft } from "lucide-react";
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { OrgMembersCard } from "@/components/admin/add-user-to-org-dialog";
 
 export default async function OrgDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -116,25 +117,10 @@ export default async function OrgDetailPage({ params }: { params: Promise<{ id: 
             ))}
           </div>
 
-          {org.users.length > 0 && (
-            <div className="space-y-3">
-              <h3 className="font-semibold">Organizers</h3>
-              <Card>
-                <CardContent className="p-0">
-                  <div className="divide-y">
-                    {org.users.map((user) => (
-                      <div key={user.id} className="flex items-center justify-between px-4 py-3">
-                        <div>
-                          <p className="text-sm font-medium">{user.name}</p>
-                          <p className="text-xs text-muted-foreground">{user.email}</p>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
-          )}
+          <OrgMembersCard
+            organizationId={org.id}
+            members={org.users.map((u) => ({ id: u.id, name: u.name, email: u.email }))}
+          />
         </div>
       </div>
     </div>
