@@ -17,7 +17,7 @@ const ContentSchema = z.object({
     "event_details",
     "other",
   ]),
-  title: z.string().min(1),
+  title: z.string().optional().default(""),
   bodyText: z.string().optional(),
   fileUrls: z.array(z.string()).default([]),
   adminNotes: z.string().optional(),

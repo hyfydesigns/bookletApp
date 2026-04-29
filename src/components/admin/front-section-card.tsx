@@ -74,7 +74,7 @@ export function FrontSectionCard({
       await upsertFrontSectionContent({
         eventId,
         contentType: contentType as "president_photo" | "welcome_address" | "executives_list" | "committee_members" | "sponsors_list" | "event_details" | "other",
-        title: data.title || label,
+        title: data.title,
         bodyText: data.bodyText,
         fileUrls,
         adminNotes: data.adminNotes,
@@ -171,7 +171,7 @@ export function FrontSectionCard({
             <Icon className="h-5 w-5 text-muted-foreground" />
             <div>
               <CardTitle className="text-sm font-medium">
-                {content?.title || label}
+                {content?.title || <span className="text-muted-foreground font-normal italic">{label}</span>}
               </CardTitle>
               <p className="text-xs text-muted-foreground">{description}</p>
             </div>

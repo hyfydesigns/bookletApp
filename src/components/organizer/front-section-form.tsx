@@ -56,7 +56,7 @@ export function OrganizerFrontSectionForm({
       await upsertFrontSectionContent({
         eventId,
         contentType: contentType as "president_photo" | "welcome_address" | "executives_list" | "committee_members" | "sponsors_list" | "event_details" | "other",
-        title: data.title || label,
+        title: data.title,
         bodyText: data.bodyText,
         fileUrls,
       });
@@ -84,7 +84,7 @@ export function OrganizerFrontSectionForm({
             )}
             <div>
               <CardTitle className="text-sm font-medium">
-                {content?.title || label}
+                {content?.title || <span className="text-muted-foreground font-normal italic">{label}</span>}
               </CardTitle>
               {content && !isDone && <ContentStatusBadge status={content.status} />}
               {isDone && <p className="text-xs text-green-600">Completed by designer</p>}
