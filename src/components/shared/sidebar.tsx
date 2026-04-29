@@ -12,7 +12,6 @@ import {
   BarChart3,
   BookOpen,
   Bell,
-  Settings,
 } from "lucide-react";
 
 interface NavItem {
@@ -76,15 +75,6 @@ export function Sidebar({ role, orgName }: SidebarProps) {
         })}
       </nav>
 
-      <div className="px-3 py-4 border-t">
-        <Link
-          href="/settings"
-          className="flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium text-muted-foreground hover:bg-accent hover:text-accent-foreground transition-colors"
-        >
-          <Settings className="h-4 w-4" />
-          Settings
-        </Link>
-      </div>
     </aside>
   );
 }
