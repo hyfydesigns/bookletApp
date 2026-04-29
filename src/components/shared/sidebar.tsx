@@ -13,6 +13,7 @@ import {
   BookOpen,
   Bell,
   ArchiveRestore,
+  HelpCircle,
 } from "lucide-react";
 
 interface NavItem {
@@ -29,11 +30,13 @@ const adminNav: NavItem[] = [
   { href: "/admin/reports", label: "Reports", icon: BarChart3 },
   { href: "/admin/users", label: "Users", icon: Users },
   { href: "/admin/backups", label: "Backups", icon: ArchiveRestore },
+  { href: "/admin/help", label: "Help", icon: HelpCircle },
 ];
 
 const organizerNav: NavItem[] = [
   { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
   { href: "/events", label: "My Events", icon: CalendarDays },
+  { href: "/help", label: "Help", icon: HelpCircle },
 ];
 
 interface SidebarProps {
