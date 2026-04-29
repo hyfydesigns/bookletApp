@@ -140,6 +140,7 @@ export default async function AdDetailPage({
             ad={{ id: ad.id, pageNumber: ad.pageNumber, pageSlot: ad.pageSlot, adType: ad.adType, sharedPageWithAdId: ad.sharedPageWithAdId }}
             eventAds={eventAds.map(a => ({ id: a.id, adCode: a.adCode, advertiserName: a.advertiserName, adType: a.adType, pageNumber: a.pageNumber, pageSlot: a.pageSlot }))}
             eventId={id}
+            totalPages={ad.event.totalPages}
           />
 
           {ad.finalDesignUrl && (

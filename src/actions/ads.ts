@@ -154,7 +154,20 @@ export async function updateAdPageAssignment(
     return updated;
   }
 
+  // Validate page number is within event bounds
+  if (pageNumber > ad.event.totalPages) {
+    throw new Error(`Page ${pageNumber} exceeds the event's total of ${ad.event.totalPages} pages`);
+  }
+
+  // Find all other ads already assigned to this page
+  const adsOnPage = await prisma.ad.findMany({
+    where: { eventId: ad.eventId, pageNumber, id: { not: id } },
+  });
+
   if (ad.adType === "full_page") {
+    if (adsOnPage.length > 0) {
+      throw new Error(`Page ${pageNumber} is already occupied by another ad`);
+    }
     const updated = await prisma.ad.update({
       where: { id },
       data: { pageNumber, pageSlot: "full", sharedPageWithAdId: null },
@@ -163,15 +176,17 @@ export async function updateAdPageAssignment(
     return updated;
   }
 
-  // Half page — check if another half-page ad is already on this page
-  const partner = await prisma.ad.findFirst({
-    where: {
-      eventId: ad.eventId,
-      adType: "half_page",
-      pageNumber,
-      id: { not: id },
-    },
-  });
+  // Half page — check for conflicts
+  const fullPageOnThisPage = adsOnPage.find((a) => a.adType === "full_page");
+  if (fullPageOnThisPage) {
+    throw new Error(`Page ${pageNumber} already has a full-page ad`);
+  }
+  const halfPagesOnPage = adsOnPage.filter((a) => a.adType === "half_page");
+  if (halfPagesOnPage.length >= 2) {
+    throw new Error(`Page ${pageNumber} already has two half-page ads`);
+  }
+
+  const partner = halfPagesOnPage[0] ?? null;
 
   if (partner) {
     const partnerSlot: "top" | "bottom" = partner.pageSlot === "bottom" ? "bottom" : "top";

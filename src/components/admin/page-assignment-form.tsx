@@ -28,24 +28,47 @@ interface PageAssignmentFormProps {
   };
   eventAds: OtherAd[];
   eventId: string;
+  totalPages: number;
 }
 
-export function PageAssignmentForm({ ad, eventAds, eventId }: PageAssignmentFormProps) {
+export function PageAssignmentForm({ ad, eventAds, eventId, totalPages }: PageAssignmentFormProps) {
   const router = useRouter();
   const [pageNumber, setPageNumber] = useState(ad.pageNumber ? String(ad.pageNumber) : "");
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const pageNum = parseInt(pageNumber);
 
-  // Find a half-page partner on the entered page (excluding this ad)
+  // Client-side conflict preview (excluding this ad)
+  const adsOnEnteredPage = pageNum
+    ? eventAds.filter((a) => a.id !== ad.id && a.pageNumber === pageNum)
+    : [];
+
   const potentialPartner =
     ad.adType === "half_page" && pageNum
-      ? eventAds.find(
-          (a) =>
-            a.id !== ad.id &&
-            a.adType === "half_page" &&
-            a.pageNumber === pageNum
-        )
+      ? adsOnEnteredPage.find((a) => a.adType === "half_page")
+      : null;
+
+  const fullPageConflict =
+    pageNum ? adsOnEnteredPage.find((a) => a.adType === "full_page") : null;
+
+  const halfPagesFull =
+    ad.adType === "half_page" && pageNum
+      ? adsOnEnteredPage.filter((a) => a.adType === "half_page").length >= 2
+      : false;
+
+  const fullPageOccupied =
+    ad.adType === "full_page" && adsOnEnteredPage.length > 0;
+
+  const clientError =
+    pageNum && pageNum > totalPages
+      ? `Page ${pageNum} exceeds the event total of ${totalPages} pages`
+      : fullPageConflict
+      ? `Page ${pageNum} already has a full-page ad`
+      : halfPagesFull
+      ? `Page ${pageNum} already has two half-page ads`
+      : fullPageOccupied
+      ? `Page ${pageNum} is already occupied by another ad`
       : null;
 
   // Current partner (already shared)
@@ -54,10 +77,17 @@ export function PageAssignmentForm({ ad, eventAds, eventId }: PageAssignmentForm
     : null;
 
   const onSave = async () => {
+    if (clientError) return;
+    setError(null);
     setLoading(true);
-    await updateAdPageAssignment(ad.id, pageNum || null);
-    router.refresh();
-    setLoading(false);
+    try {
+      await updateAdPageAssignment(ad.id, pageNum || null);
+      router.refresh();
+    } catch (e: unknown) {
+      setError(e instanceof Error ? e.message : "Failed to assign page");
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -70,15 +100,23 @@ export function PageAssignmentForm({ ad, eventAds, eventId }: PageAssignmentForm
       </CardHeader>
       <CardContent className="space-y-3">
         <div className="space-y-1">
-          <Label className="text-xs text-muted-foreground">Page Number</Label>
+          <Label className="text-xs text-muted-foreground">
+            Page Number <span className="text-muted-foreground/60">(max {totalPages})</span>
+          </Label>
           <Input
             type="number"
             value={pageNumber}
-            onChange={(e) => setPageNumber(e.target.value)}
+            onChange={(e) => { setPageNumber(e.target.value); setError(null); }}
             placeholder="e.g. 7"
             min={1}
+            max={totalPages}
           />
         </div>
+
+        {/* Validation errors */}
+        {(clientError || error) && (
+          <p className="text-xs text-destructive">{clientError ?? error}</p>
+        )}
 
         {/* Current assignment */}
         {ad.pageNumber && (
@@ -113,14 +151,20 @@ export function PageAssignmentForm({ ad, eventAds, eventId }: PageAssignmentForm
           </div>
         )}
 
-        {ad.adType === "half_page" && pageNum && !potentialPartner && (
+        {ad.adType === "half_page" && pageNum && !potentialPartner && !clientError && (
           <p className="text-xs text-muted-foreground">
             Half-page ad — will be assigned to the top half. A second half-page ad can share this page.
           </p>
         )}
 
         <div className="flex gap-2">
-          <Button size="sm" variant="outline" onClick={onSave} disabled={loading} className="flex-1">
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={onSave}
+            disabled={loading || !!clientError}
+            className="flex-1"
+          >
             {loading ? "Saving..." : "Assign Page"}
           </Button>
           {ad.pageNumber && (
@@ -128,11 +172,17 @@ export function PageAssignmentForm({ ad, eventAds, eventId }: PageAssignmentForm
               size="sm"
               variant="ghost"
               onClick={async () => {
+                setError(null);
                 setLoading(true);
-                await updateAdPageAssignment(ad.id, null);
-                setPageNumber("");
-                router.refresh();
-                setLoading(false);
+                try {
+                  await updateAdPageAssignment(ad.id, null);
+                  setPageNumber("");
+                  router.refresh();
+                } catch (e: unknown) {
+                  setError(e instanceof Error ? e.message : "Failed to clear page");
+                } finally {
+                  setLoading(false);
+                }
               }}
               disabled={loading}
               className="text-destructive hover:text-destructive"
