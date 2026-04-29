@@ -3,7 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { ArchiveRestore, Building2, CalendarDays } from "lucide-react";
-import { RestoreBackupButton, DeleteBackupButton, DownloadBackupButton, DownloadAllBackupsButton } from "./actions";
+import { RestoreBackupButton, DeleteBackupButton, DownloadBackupButton, DownloadAllBackupsButton, RestoreFromZipButton } from "./actions";
 
 export default async function BackupsPage() {
   const backups = await getBackups();
@@ -17,7 +17,10 @@ export default async function BackupsPage() {
             {backups.length} backup{backups.length !== 1 ? "s" : ""} — restore any deleted organization or event
           </p>
         </div>
-        {backups.length > 0 && <DownloadAllBackupsButton />}
+        <div className="flex items-center gap-2">
+          <RestoreFromZipButton />
+          {backups.length > 0 && <DownloadAllBackupsButton />}
+        </div>
       </div>
 
       {backups.length === 0 && (
