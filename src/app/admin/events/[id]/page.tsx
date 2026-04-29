@@ -10,6 +10,7 @@ import { notFound } from "next/navigation";
 import { UpdateEventStatusSelect } from "@/components/admin/update-event-status";
 import { EditEventDialog } from "@/components/admin/edit-event-dialog";
 import { DeleteWithBackupDialog } from "@/components/admin/delete-with-backup-dialog";
+import { DeleteAdButton } from "@/components/admin/delete-ad-button";
 
 export default async function AdminEventDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -159,6 +160,12 @@ export default async function AdminEventDetailPage({ params }: { params: Promise
                         <Link href={`/admin/events/${id}/ads/${ad.id}`}>
                           <Button variant="ghost" size="sm">View</Button>
                         </Link>
+                        <DeleteAdButton
+                          id={ad.id}
+                          adCode={ad.adCode}
+                          advertiserName={ad.advertiserName}
+                          variant="icon"
+                        />
                       </div>
                     </div>
                   ))}

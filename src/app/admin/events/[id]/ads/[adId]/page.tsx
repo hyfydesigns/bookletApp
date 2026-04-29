@@ -9,6 +9,7 @@ import { notFound } from "next/navigation";
 import { AdStatusManager } from "@/components/admin/ad-status-manager";
 import { PageAssignmentForm } from "@/components/admin/page-assignment-form";
 import { EditAdDialog } from "@/components/admin/edit-ad-dialog";
+import { DeleteAdButton } from "@/components/admin/delete-ad-button";
 
 export default async function AdDetailPage({
   params,
@@ -38,6 +39,12 @@ export default async function AdDetailPage({
           <EditAdDialog ad={{ id: ad.id, advertiserName: ad.advertiserName, contactPerson: ad.contactPerson, contactEmail: ad.contactEmail, contactPhone: ad.contactPhone, adMessage: ad.adMessage, notes: ad.notes, submittedFiles: ad.submittedFiles }} />
           <AdStatusBadge status={ad.adContentStatus} />
           <PaymentBadge status={ad.paymentStatus} />
+          <DeleteAdButton
+            id={ad.id}
+            adCode={ad.adCode}
+            advertiserName={ad.advertiserName}
+            redirectTo={`/admin/events/${id}/ads`}
+          />
         </div>
       </div>
 
