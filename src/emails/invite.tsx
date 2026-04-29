@@ -159,3 +159,5 @@ const footerText: React.CSSProperties = {
   textAlign: "center",
   marginTop: "24px",
 };
+
+export default () => <InviteEmail organizationName="Acme Events" inviteLink="https://example.com/invite" />;

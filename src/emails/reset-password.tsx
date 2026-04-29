@@ -74,3 +74,5 @@ const hr: React.CSSProperties = { borderColor: "#e4e4e7", margin: "0 0 20px" };
 const footer: React.CSSProperties = { fontSize: "12px", color: "#a1a1aa", margin: "0 0 4px" };
 const link: React.CSSProperties = { fontSize: "11px", color: "#71717a", wordBreak: "break-all", margin: "0" };
 const footerText: React.CSSProperties = { fontSize: "12px", color: "#a1a1aa", textAlign: "center", marginTop: "24px" };
+
+export default () => <ResetPasswordEmail />;
