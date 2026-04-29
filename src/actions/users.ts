@@ -52,8 +52,26 @@ export async function addUserToOrganizationByEmail(
     return { invited: false, name: existingUser.name };
   }
 
-  // No account yet — send Supabase invite (uses template set in Supabase dashboard)
+  // No Prisma record — check if they already have a Supabase auth account
   const supabase = getAdminClient();
+  const { data: { users: supabaseUsers } } = await supabase.auth.admin.listUsers({ perPage: 1000 });
+  const supabaseUser = supabaseUsers.find((u) => u.email === email);
+
+  if (supabaseUser) {
+    // Has a Supabase account but no Prisma record — sync and assign
+    const name =
+      supabaseUser.user_metadata?.full_name ??
+      supabaseUser.user_metadata?.name ??
+      email.split("@")[0];
+    await prisma.user.create({
+      data: { supabaseId: supabaseUser.id, email, name, role: "organizer", organizationId },
+    });
+    revalidatePath(`/admin/organizations/${organizationId}`);
+    revalidatePath("/admin/users");
+    return { invited: false, name };
+  }
+
+  // No account at all — send invite
   const { error } = await supabase.auth.admin.inviteUserByEmail(email, {
     data: { organizationId },
     redirectTo: `${process.env.NEXT_PUBLIC_APP_URL}/auth/callback?next=/dashboard`,
