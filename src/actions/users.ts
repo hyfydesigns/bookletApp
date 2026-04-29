@@ -5,6 +5,7 @@ import { prisma } from "@/lib/prisma";
 import { requireAdmin, syncSupabaseUser } from "@/lib/auth";
 import { z } from "zod";
 import { createClient } from "@supabase/supabase-js";
+import { sendInviteEmail } from "@/lib/email";
 
 function getAdminClient() {
   return createClient(
@@ -52,13 +53,28 @@ export async function addUserToOrganizationByEmail(
     return { invited: false, name: existingUser.name };
   }
 
-  // No account yet — send a Supabase invite with the org embedded in metadata
+  // No account yet — generate invite link and send branded email via Resend
   const supabase = getAdminClient();
-  const { error } = await supabase.auth.admin.inviteUserByEmail(email, {
-    data: { organizationId },
-    redirectTo: `${process.env.NEXT_PUBLIC_APP_URL}/auth/callback?next=/dashboard`,
+  const { data: linkData, error: linkError } = await supabase.auth.admin.generateLink({
+    type: "invite",
+    email,
+    options: {
+      data: { organizationId },
+      redirectTo: `${process.env.NEXT_PUBLIC_APP_URL}/auth/callback?next=/dashboard`,
+    },
   });
-  if (error) throw new Error(`Failed to send invite: ${error.message}`);
+  if (linkError) throw new Error(`Failed to generate invite: ${linkError.message}`);
+
+  const org = await prisma.organization.findUnique({
+    where: { id: organizationId },
+    select: { name: true },
+  });
+
+  await sendInviteEmail({
+    to: email,
+    organizationName: org?.name ?? "your organization",
+    inviteLink: linkData.properties.action_link,
+  });
 
   revalidatePath(`/admin/organizations/${organizationId}`);
   return { invited: true, name: null };
