@@ -27,9 +27,6 @@ const schema = z.object({
   if (data.totalPages % 4 !== 0) {
     ctx.addIssue({ code: z.ZodIssueCode.custom, path: ["totalPages"], message: "Total pages must be divisible by 4" });
   }
-  if (data.frontSectionPages % 4 !== 0) {
-    ctx.addIssue({ code: z.ZodIssueCode.custom, path: ["frontSectionPages"], message: "Front section pages must be divisible by 4" });
-  }
 });
 
 interface CreateEventDialogProps {
@@ -119,7 +116,7 @@ export function CreateEventDialog({ organizations, defaultOrgId }: CreateEventDi
             </div>
             <div className="space-y-2">
               <Label htmlFor="frontSectionPages">Front Section Pages</Label>
-              <Input id="frontSectionPages" type="number" step={4} min={0} {...register("frontSectionPages")} />
+              <Input id="frontSectionPages" type="number" min={0} {...register("frontSectionPages")} />
               {errors.frontSectionPages && <p className="text-sm text-destructive">{errors.frontSectionPages.message}</p>}
             </div>
           </div>

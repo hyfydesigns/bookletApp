@@ -22,9 +22,6 @@ const EventSchema = z.object({
   if (data.totalPages % 4 !== 0) {
     ctx.addIssue({ code: z.ZodIssueCode.custom, path: ["totalPages"], message: "Total pages must be divisible by 4" });
   }
-  if (data.frontSectionPages % 4 !== 0) {
-    ctx.addIssue({ code: z.ZodIssueCode.custom, path: ["frontSectionPages"], message: "Front section pages must be divisible by 4" });
-  }
 });
 
 export async function createEvent(data: z.infer<typeof EventSchema>) {
