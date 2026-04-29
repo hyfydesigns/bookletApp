@@ -7,6 +7,7 @@ import { formatCurrency, formatDate } from "@/lib/utils";
 import { ArrowLeft, CalendarDays, MapPin, FileImage, Layout } from "lucide-react";
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { OrganizerEditEventDialog } from "@/components/organizer/edit-event-dialog";
 
 export default async function OrganizerEventPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -24,13 +25,14 @@ export default async function OrganizerEventPage({ params }: { params: Promise<{
         <Link href="/dashboard">
           <Button variant="ghost" size="sm"><ArrowLeft className="h-4 w-4 mr-1" /> Back</Button>
         </Link>
-        <div>
+        <div className="flex-1">
           <div className="flex items-center gap-2">
             <h2 className="text-2xl font-bold">{event.name}</h2>
             <EventStatusBadge status={event.status} />
           </div>
           <p className="text-muted-foreground">{event.organization.name}</p>
         </div>
+        <OrganizerEditEventDialog event={event} />
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
