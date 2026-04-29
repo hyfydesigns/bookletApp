@@ -12,7 +12,7 @@ async function main() {
   const templates = [
     {
       name: "invite",
-      html: await render(InviteEmail({ organizationName: "Your Organization", inviteLink: "{{ .ConfirmationURL }}" })),
+      html: await render(InviteEmail({ inviteLink: "{{ .ConfirmationURL }}" })),
     },
     {
       name: "confirm-signup",

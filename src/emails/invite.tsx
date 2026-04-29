@@ -12,15 +12,14 @@ import {
 } from "@react-email/components";
 
 interface InviteEmailProps {
-  organizationName: string;
   inviteLink: string;
 }
 
-export function InviteEmail({ organizationName, inviteLink }: InviteEmailProps) {
+export function InviteEmail({ inviteLink }: InviteEmailProps) {
   return (
     <Html>
       <Head />
-      <Preview>You&apos;ve been invited to join {organizationName} on BookletFlow</Preview>
+      <Preview>You&apos;ve been invited to BookletFlow</Preview>
       <Body style={body}>
         <Container style={container}>
           <Section style={logoSection}>
@@ -30,7 +29,7 @@ export function InviteEmail({ organizationName, inviteLink }: InviteEmailProps) 
           <Section style={card}>
             <Heading style={h1}>You&apos;re invited</Heading>
             <Text style={paragraph}>
-              You&apos;ve been invited to join <strong>{organizationName}</strong> on BookletFlow — the platform for managing event booklet ads and front sections.
+              You&apos;ve been invited to join your organization on BookletFlow — the platform for managing event booklet ads and front sections.
             </Text>
             <Text style={paragraph}>
               Click the button below to create your account and get started.
@@ -160,4 +159,4 @@ const footerText: React.CSSProperties = {
   marginTop: "24px",
 };
 
-export default () => <InviteEmail organizationName="Acme Events" inviteLink="https://example.com/invite" />;
+export default () => <InviteEmail inviteLink="https://example.com/invite" />;
