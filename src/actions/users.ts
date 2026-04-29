@@ -74,7 +74,7 @@ export async function addUserToOrganizationByEmail(
   // No account at all — send invite
   const { error } = await supabase.auth.admin.inviteUserByEmail(email, {
     data: { organizationId },
-    redirectTo: `${process.env.NEXT_PUBLIC_APP_URL}/auth/callback?next=/dashboard`,
+    redirectTo: `${process.env.NEXT_PUBLIC_APP_URL}/auth/confirm`,
   });
   if (error) throw new Error(`Failed to send invite: ${error.message}`);
 
