@@ -11,16 +11,25 @@ import { Input } from "@/components/ui/input";
 import { ContentStatusBadge } from "@/components/shared/status-badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Edit, Eye, FileText, ExternalLink } from "lucide-react";
+import { Edit, Eye, FileText, ExternalLink, Image, Users, List, Star, Info } from "lucide-react";
 import { useRouter } from "next/navigation";
 import type { LucideIcon } from "lucide-react";
+
+const ICON_MAP: Record<string, LucideIcon> = {
+  president_photo: Image,
+  welcome_address: FileText,
+  executives_list: Users,
+  committee_members: List,
+  sponsors_list: Star,
+  event_details: Info,
+  other: FileText,
+};
 
 interface FrontSectionCardProps {
   eventId: string;
   contentType: string;
   label: string;
   description: string;
-  icon: LucideIcon;
   content: {
     id: string;
     title: string;
@@ -36,9 +45,9 @@ export function FrontSectionCard({
   contentType,
   label,
   description,
-  icon: Icon,
   content,
 }: FrontSectionCardProps) {
+  const Icon = ICON_MAP[contentType] ?? FileText;
   const [editOpen, setEditOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const router = useRouter();

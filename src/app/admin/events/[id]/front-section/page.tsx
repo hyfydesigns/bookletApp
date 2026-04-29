@@ -3,19 +3,19 @@ import { getFrontSectionContents } from "@/actions/front-section";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ContentStatusBadge } from "@/components/shared/status-badge";
-import { ArrowLeft, FileText, Image, Users, List, Star, Info, Plus } from "lucide-react";
+import { ArrowLeft, Plus } from "lucide-react";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { FrontSectionCard } from "@/components/admin/front-section-card";
 
 const CONTENT_TYPES = [
-  { type: "president_photo", label: "President's Photo", icon: Image, description: "Photo of the president/leader" },
-  { type: "welcome_address", label: "Welcome Address", icon: FileText, description: "President's welcome message" },
-  { type: "executives_list", label: "Executives / Board", icon: Users, description: "Board members and executives" },
-  { type: "committee_members", label: "Planning Committee", icon: List, description: "Event planning committee members" },
-  { type: "sponsors_list", label: "Sponsors List", icon: Star, description: "Event sponsors and supporters" },
-  { type: "event_details", label: "Event Details", icon: Info, description: "Program, agenda, or event info" },
-  { type: "other", label: "Other Content", icon: FileText, description: "Additional front section content" },
+  { type: "president_photo", label: "President's Photo", description: "Photo of the president/leader" },
+  { type: "welcome_address", label: "Welcome Address", description: "President's welcome message" },
+  { type: "executives_list", label: "Executives / Board", description: "Board members and executives" },
+  { type: "committee_members", label: "Planning Committee", description: "Event planning committee members" },
+  { type: "sponsors_list", label: "Sponsors List", description: "Event sponsors and supporters" },
+  { type: "event_details", label: "Event Details", description: "Program, agenda, or event info" },
+  { type: "other", label: "Other Content", description: "Additional front section content" },
 ];
 
 export default async function FrontSectionPage({ params }: { params: Promise<{ id: string }> }) {
@@ -42,7 +42,7 @@ export default async function FrontSectionPage({ params }: { params: Promise<{ i
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        {CONTENT_TYPES.map(({ type, label, icon: Icon, description }) => {
+        {CONTENT_TYPES.map(({ type, label, description }) => {
           const content = contentMap[type as keyof typeof contentMap];
           return (
             <FrontSectionCard
@@ -51,7 +51,6 @@ export default async function FrontSectionPage({ params }: { params: Promise<{ i
               contentType={type}
               label={label}
               description={description}
-              icon={Icon}
               content={content ?? null}
             />
           );
