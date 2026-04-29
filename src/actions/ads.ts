@@ -124,10 +124,18 @@ export async function updateAdPageAssignment(
   id: string,
   pageNumber: number | null,
 ) {
-  await requireAdmin();
+  const user = await requireOrganizer();
 
-  const ad = await prisma.ad.findUnique({ where: { id } });
+  const ad = await prisma.ad.findUnique({ where: { id }, include: { event: true } });
   if (!ad) throw new Error("Ad not found");
+  if (user.role !== "admin" && user.organizationId !== ad.event.organizationId) {
+    throw new Error("Unauthorized");
+  }
+
+  const revalidate = (eventId: string) => {
+    revalidatePath(`/admin/events/${eventId}/ads`);
+    revalidatePath(`/events/${eventId}/ads`);
+  };
 
   // Clear old shared link if this ad was previously paired
   if (ad.sharedPageWithAdId) {
@@ -142,7 +150,7 @@ export async function updateAdPageAssignment(
       where: { id },
       data: { pageNumber: null, pageSlot: null, sharedPageWithAdId: null },
     });
-    revalidatePath(`/admin/events/${updated.eventId}/ads`);
+    revalidate(updated.eventId);
     return updated;
   }
 
@@ -151,7 +159,7 @@ export async function updateAdPageAssignment(
       where: { id },
       data: { pageNumber, pageSlot: "full", sharedPageWithAdId: null },
     });
-    revalidatePath(`/admin/events/${updated.eventId}/ads`);
+    revalidate(updated.eventId);
     return updated;
   }
 
@@ -166,11 +174,9 @@ export async function updateAdPageAssignment(
   });
 
   if (partner) {
-    // Determine slots: give partner top if not yet assigned, this ad takes the other
     const partnerSlot: "top" | "bottom" = partner.pageSlot === "bottom" ? "bottom" : "top";
     const mySlot: "top" | "bottom" = partnerSlot === "top" ? "bottom" : "top";
 
-    // Clear any old partner link on the partner side first
     if (partner.sharedPageWithAdId && partner.sharedPageWithAdId !== id) {
       await prisma.ad.update({
         where: { id: partner.sharedPageWithAdId },
@@ -186,7 +192,7 @@ export async function updateAdPageAssignment(
       where: { id },
       data: { pageNumber, pageSlot: mySlot, sharedPageWithAdId: partner.id },
     });
-    revalidatePath(`/admin/events/${updated.eventId}/ads`);
+    revalidate(updated.eventId);
     return updated;
   }
 
@@ -195,7 +201,7 @@ export async function updateAdPageAssignment(
     where: { id },
     data: { pageNumber, pageSlot: "top", sharedPageWithAdId: null },
   });
-  revalidatePath(`/admin/events/${updated.eventId}/ads`);
+  revalidate(updated.eventId);
   return updated;
 }
 
@@ -248,7 +254,7 @@ export async function getAds(eventId: string) {
       submittedBy: { select: { name: true, email: true } },
       sharedPageWithAd: { select: { id: true, advertiserName: true, adCode: true } },
     },
-    orderBy: { createdAt: "desc" },
+    orderBy: [{ pageNumber: "asc" }, { createdAt: "asc" }],
   });
 }
 

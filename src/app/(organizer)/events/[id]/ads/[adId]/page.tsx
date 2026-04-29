@@ -1,4 +1,4 @@
-import { getAd } from "@/actions/ads";
+import { getAd, getAds } from "@/actions/ads";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { AdStatusBadge, PaymentBadge } from "@/components/shared/status-badge";
@@ -8,6 +8,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { OrganizerPaymentUpdate } from "@/components/organizer/payment-update";
 import { OrganizerEditAdDialog } from "@/components/organizer/edit-ad-dialog";
+import { PageAssignmentForm } from "@/components/admin/page-assignment-form";
 
 export default async function OrganizerAdDetailPage({
   params,
@@ -15,7 +16,7 @@ export default async function OrganizerAdDetailPage({
   params: Promise<{ id: string; adId: string }>;
 }) {
   const { id, adId } = await params;
-  const ad = await getAd(adId);
+  const [ad, eventAds] = await Promise.all([getAd(adId), getAds(id)]);
   if (!ad) notFound();
 
   return (
@@ -75,6 +76,12 @@ export default async function OrganizerAdDetailPage({
           paymentStatus={ad.paymentStatus}
           amountPaid={Number(ad.amountPaid)}
           paymentAmount={Number(ad.paymentAmount)}
+        />
+
+        <PageAssignmentForm
+          ad={{ id: ad.id, pageNumber: ad.pageNumber, pageSlot: ad.pageSlot, adType: ad.adType, sharedPageWithAdId: ad.sharedPageWithAdId }}
+          eventAds={eventAds.map(a => ({ id: a.id, adCode: a.adCode, advertiserName: a.advertiserName, adType: a.adType, pageNumber: a.pageNumber, pageSlot: a.pageSlot }))}
+          eventId={id}
         />
 
         {ad.submittedFiles.length > 0 && (
