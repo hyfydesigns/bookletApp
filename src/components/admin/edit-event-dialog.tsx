@@ -4,26 +4,28 @@ import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { createEvent } from "@/actions/events";
+import { updateEvent } from "@/actions/events";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Plus } from "lucide-react";
+import { Pencil } from "lucide-react";
 import { useRouter } from "next/navigation";
 
-const schema = z.object({
-  organizationId: z.string().min(1, "Organization is required"),
+const baseSchema = z.object({
   name: z.string().min(1, "Event name is required"),
   eventDate: z.string().optional(),
   location: z.string().optional(),
   theme: z.string().optional(),
-  totalPages: z.coerce.number().min(4, "Minimum 4 pages").default(20),
-  frontSectionPages: z.coerce.number().min(0).default(4),
+  totalPages: z.coerce.number().min(4, "Minimum 4 pages"),
+  frontSectionPages: z.coerce.number().min(0),
   notes: z.string().optional(),
-}).superRefine((data, ctx) => {
+});
+
+type FormValues = z.infer<typeof baseSchema>;
+
+const schema = baseSchema.superRefine((data, ctx) => {
   if (data.totalPages % 4 !== 0) {
     ctx.addIssue({ code: z.ZodIssueCode.custom, path: ["totalPages"], message: "Total pages must be divisible by 4" });
   }
@@ -32,30 +34,42 @@ const schema = z.object({
   }
 });
 
-interface CreateEventDialogProps {
-  organizations: { id: string; name: string }[];
-  defaultOrgId?: string;
+interface EditEventDialogProps {
+  event: {
+    id: string;
+    name: string;
+    eventDate: Date | null;
+    location: string | null;
+    theme: string | null;
+    totalPages: number;
+    frontSectionPages: number;
+    notes: string | null;
+  };
 }
 
-export function CreateEventDialog({ organizations, defaultOrgId }: CreateEventDialogProps) {
+export function EditEventDialog({ event }: EditEventDialogProps) {
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const router = useRouter();
 
-  const { register, handleSubmit, reset, setValue, watch, formState: { errors } } = useForm({
-    resolver: zodResolver(schema),
+  const { register, handleSubmit, formState: { errors } } = useForm<FormValues>({
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    resolver: zodResolver(schema) as any,
     defaultValues: {
-      organizationId: defaultOrgId ?? "",
-      totalPages: 20,
-      frontSectionPages: 4,
+      name: event.name,
+      eventDate: event.eventDate ? new Date(event.eventDate).toISOString().split("T")[0] : "",
+      location: event.location ?? "",
+      theme: event.theme ?? "",
+      totalPages: event.totalPages,
+      frontSectionPages: event.frontSectionPages,
+      notes: event.notes ?? "",
     },
   });
 
-  const onSubmit = async (data: z.infer<typeof schema>) => {
+  const onSubmit = async (data: FormValues) => {
     setLoading(true);
     try {
-      await createEvent({ ...data, status: "draft" });
-      reset();
+      await updateEvent(event.id, data);
       setOpen(false);
       router.refresh();
     } finally {
@@ -66,35 +80,19 @@ export function CreateEventDialog({ organizations, defaultOrgId }: CreateEventDi
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button className="flex items-center gap-2">
-          <Plus className="h-4 w-4" />
-          New Event
+        <Button variant="outline" size="sm" className="flex items-center gap-2">
+          <Pencil className="h-4 w-4" />
+          Edit Event
         </Button>
       </DialogTrigger>
       <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>Create Event</DialogTitle>
+          <DialogTitle>Edit Event</DialogTitle>
         </DialogHeader>
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-          {!defaultOrgId && (
-            <div className="space-y-2">
-              <Label>Organization *</Label>
-              <Select onValueChange={(v) => setValue("organizationId", v)}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Select organization" />
-                </SelectTrigger>
-                <SelectContent>
-                  {organizations.map((org) => (
-                    <SelectItem key={org.id} value={org.id}>{org.name}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              {errors.organizationId && <p className="text-sm text-destructive">{errors.organizationId.message}</p>}
-            </div>
-          )}
           <div className="space-y-2">
             <Label htmlFor="name">Event Name *</Label>
-            <Input id="name" {...register("name")} placeholder="e.g. Annual Gala 2025" />
+            <Input id="name" {...register("name")} />
             {errors.name && <p className="text-sm text-destructive">{errors.name.message}</p>}
           </div>
           <div className="grid grid-cols-2 gap-3">
@@ -130,7 +128,7 @@ export function CreateEventDialog({ organizations, defaultOrgId }: CreateEventDi
           <div className="flex gap-3 pt-2">
             <Button type="button" variant="outline" onClick={() => setOpen(false)} className="flex-1">Cancel</Button>
             <Button type="submit" disabled={loading} className="flex-1">
-              {loading ? "Creating..." : "Create Event"}
+              {loading ? "Saving..." : "Save Changes"}
             </Button>
           </div>
         </form>

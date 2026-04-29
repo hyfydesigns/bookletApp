@@ -8,6 +8,7 @@ import { ArrowLeft, CalendarDays, MapPin, FileImage, Layout, DollarSign } from "
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { UpdateEventStatusSelect } from "@/components/admin/update-event-status";
+import { EditEventDialog } from "@/components/admin/edit-event-dialog";
 
 export default async function AdminEventDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -33,7 +34,10 @@ export default async function AdminEventDetailPage({ params }: { params: Promise
           </div>
           <p className="text-muted-foreground">{event.organization.name}</p>
         </div>
-        <UpdateEventStatusSelect eventId={id} currentStatus={event.status} />
+        <div className="flex items-center gap-2">
+          <EditEventDialog event={event} />
+          <UpdateEventStatusSelect eventId={id} currentStatus={event.status} />
+        </div>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">

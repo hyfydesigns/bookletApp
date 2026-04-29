@@ -12,12 +12,19 @@ const EventSchema = z.object({
   eventDate: z.string().optional(),
   location: z.string().optional(),
   theme: z.string().optional(),
-  totalPages: z.coerce.number().min(1).default(20),
+  totalPages: z.coerce.number().min(4).default(20),
   frontSectionPages: z.coerce.number().min(0).default(4),
   status: z
     .enum(["draft", "active", "in_progress", "completed", "archived"])
     .default("draft"),
   notes: z.string().optional(),
+}).superRefine((data, ctx) => {
+  if (data.totalPages % 4 !== 0) {
+    ctx.addIssue({ code: z.ZodIssueCode.custom, path: ["totalPages"], message: "Total pages must be divisible by 4" });
+  }
+  if (data.frontSectionPages % 4 !== 0) {
+    ctx.addIssue({ code: z.ZodIssueCode.custom, path: ["frontSectionPages"], message: "Front section pages must be divisible by 4" });
+  }
 });
 
 export async function createEvent(data: z.infer<typeof EventSchema>) {
