@@ -5,13 +5,14 @@ import { useForm } from "react-hook-form";
 import { upsertFrontSectionContent, updateContentStatus } from "@/actions/front-section";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
-import { Input } from "@/components/ui/input";
 import { ContentStatusBadge } from "@/components/shared/status-badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Edit, Eye, FileText, ExternalLink, Image, Users, List, Star, Info } from "lucide-react";
+import { UploadButton } from "@/lib/uploadthing";
+import { Edit, FileText, ExternalLink, Image, Users, List, Star, Info, X } from "lucide-react";
 import { useRouter } from "next/navigation";
 import type { LucideIcon } from "lucide-react";
 
@@ -25,11 +26,16 @@ const ICON_MAP: Record<string, LucideIcon> = {
   other: FileText,
 };
 
+function isImageUrl(url: string) {
+  return /\.(jpg|jpeg|png|gif|webp|svg)(\?|$)/i.test(url);
+}
+
 interface FrontSectionCardProps {
   eventId: string;
   contentType: string;
   label: string;
   description: string;
+  defaultTitle: string;
   content: {
     id: string;
     title: string;
@@ -45,16 +51,18 @@ export function FrontSectionCard({
   contentType,
   label,
   description,
+  defaultTitle,
   content,
 }: FrontSectionCardProps) {
-  const Icon = ICON_MAP[contentType] ?? FileText;
   const [editOpen, setEditOpen] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [fileUrls, setFileUrls] = useState<string[]>(content?.fileUrls ?? []);
   const router = useRouter();
+  const Icon = ICON_MAP[contentType] ?? FileText;
 
   const { register, handleSubmit, reset } = useForm({
     defaultValues: {
-      title: content?.title ?? label,
+      title: content?.title ?? defaultTitle,
       bodyText: content?.bodyText ?? "",
       adminNotes: content?.adminNotes ?? "",
     },
@@ -66,9 +74,9 @@ export function FrontSectionCard({
       await upsertFrontSectionContent({
         eventId,
         contentType: contentType as "president_photo" | "welcome_address" | "executives_list" | "committee_members" | "sponsors_list" | "event_details" | "other",
-        title: data.title,
+        title: data.title || label,
         bodyText: data.bodyText,
-        fileUrls: content?.fileUrls ?? [],
+        fileUrls,
         adminNotes: data.adminNotes,
       });
       setEditOpen(false);
@@ -84,6 +92,77 @@ export function FrontSectionCard({
     router.refresh();
   };
 
+  const dialogContent = (
+    <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
+      <DialogHeader>
+        <DialogTitle>{content ? "Edit" : "Add"}: {label}</DialogTitle>
+      </DialogHeader>
+      <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+        <div className="space-y-2">
+          <Label>Page Title</Label>
+          <Input {...register("title")} placeholder="Enter a title for this page..." />
+        </div>
+        <div className="space-y-2">
+          <Label>Content / Notes</Label>
+          <Textarea {...register("bodyText")} rows={4} placeholder="Enter content here..." />
+        </div>
+        <div className="space-y-2">
+          <Label>Images / Files</Label>
+          <UploadButton
+            endpoint="frontSectionFiles"
+            onClientUploadComplete={(res) => {
+              if (res) setFileUrls((prev) => [...prev, ...res.map((r) => r.url)]);
+            }}
+            onUploadError={(err) => alert(`Upload error: ${err.message}`)}
+          />
+          {fileUrls.length > 0 && (
+            <div className="flex flex-wrap gap-2 mt-2">
+              {fileUrls.map((url, i) => (
+                <div key={i} className="relative group">
+                  {isImageUrl(url) ? (
+                    <div className="relative">
+                      <img
+                        src={url}
+                        alt={`Upload ${i + 1}`}
+                        className="h-20 w-20 object-cover rounded border"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setFileUrls((p) => p.filter((_, j) => j !== i))}
+                        className="absolute -top-1.5 -right-1.5 bg-destructive text-destructive-foreground rounded-full h-5 w-5 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+                      >
+                        <X className="h-3 w-3" />
+                      </button>
+                    </div>
+                  ) : (
+                    <div className="flex items-center gap-1 text-xs bg-muted px-2 py-1.5 rounded border">
+                      <FileText className="h-3 w-3 flex-shrink-0" />
+                      <span className="max-w-[100px] truncate">File {i + 1}</span>
+                      <button
+                        type="button"
+                        onClick={() => setFileUrls((p) => p.filter((_, j) => j !== i))}
+                      >
+                        <X className="h-3 w-3" />
+                      </button>
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+        <div className="space-y-2">
+          <Label>Admin Notes</Label>
+          <Textarea {...register("adminNotes")} rows={2} placeholder="Internal notes..." />
+        </div>
+        <div className="flex gap-3">
+          <Button type="button" variant="outline" onClick={() => setEditOpen(false)} className="flex-1">Cancel</Button>
+          <Button type="submit" disabled={loading} className="flex-1">{loading ? "Saving..." : "Save"}</Button>
+        </div>
+      </form>
+    </DialogContent>
+  );
+
   return (
     <Card className={content?.status === "done" ? "border-green-200 bg-green-50/30" : ""}>
       <CardHeader className="pb-3">
@@ -91,12 +170,13 @@ export function FrontSectionCard({
           <div className="flex items-center gap-2">
             <Icon className="h-5 w-5 text-muted-foreground" />
             <div>
-              <CardTitle className="text-sm font-medium">{label}</CardTitle>
+              <CardTitle className="text-sm font-medium">
+                {content?.title || label}
+              </CardTitle>
               <p className="text-xs text-muted-foreground">{description}</p>
             </div>
           </div>
-          {content && <ContentStatusBadge status={content.status} />}
-          {!content && <ContentStatusBadge status="pending" />}
+          <ContentStatusBadge status={content?.status ?? "pending"} />
         </div>
       </CardHeader>
       <CardContent className="space-y-3">
@@ -106,13 +186,23 @@ export function FrontSectionCard({
               <p className="text-sm text-muted-foreground line-clamp-2">{content.bodyText}</p>
             )}
             {content.fileUrls.length > 0 && (
-              <div className="flex flex-wrap gap-1">
-                {content.fileUrls.map((url, i) => (
-                  <a key={i} href={url} target="_blank" rel="noopener noreferrer"
-                    className="text-xs text-blue-600 hover:underline flex items-center gap-1">
-                    <ExternalLink className="h-3 w-3" /> File {i + 1}
-                  </a>
-                ))}
+              <div className="flex flex-wrap gap-2">
+                {content.fileUrls.map((url, i) =>
+                  isImageUrl(url) ? (
+                    <a key={i} href={url} target="_blank" rel="noopener noreferrer">
+                      <img
+                        src={url}
+                        alt={`File ${i + 1}`}
+                        className="h-16 w-16 object-cover rounded border hover:opacity-80 transition-opacity"
+                      />
+                    </a>
+                  ) : (
+                    <a key={i} href={url} target="_blank" rel="noopener noreferrer"
+                      className="text-xs text-blue-600 hover:underline flex items-center gap-1">
+                      <ExternalLink className="h-3 w-3" /> File {i + 1}
+                    </a>
+                  )
+                )}
               </div>
             )}
             <div className="flex items-center gap-2">
@@ -129,65 +219,26 @@ export function FrontSectionCard({
               </Select>
               <Dialog open={editOpen} onOpenChange={setEditOpen}>
                 <DialogTrigger asChild>
-                  <Button variant="outline" size="sm">
-                    <Edit className="h-3.5 w-3.5" />
-                  </Button>
+                  <Button variant="outline" size="sm"><Edit className="h-3.5 w-3.5" /></Button>
                 </DialogTrigger>
-                <DialogContent>
-                  <DialogHeader>
-                    <DialogTitle>Edit: {label}</DialogTitle>
-                  </DialogHeader>
-                  <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-                    <div className="space-y-2">
-                      <Label>Content / Notes</Label>
-                      <Textarea {...register("bodyText")} rows={5} placeholder="Enter content here..." />
-                    </div>
-                    <div className="space-y-2">
-                      <Label>Admin Notes</Label>
-                      <Textarea {...register("adminNotes")} rows={2} placeholder="Internal notes..." />
-                    </div>
-                    <div className="flex gap-3">
-                      <Button type="button" variant="outline" onClick={() => setEditOpen(false)} className="flex-1">Cancel</Button>
-                      <Button type="submit" disabled={loading} className="flex-1">{loading ? "Saving..." : "Save"}</Button>
-                    </div>
-                  </form>
-                </DialogContent>
+                {dialogContent}
               </Dialog>
             </div>
           </>
         ) : (
-          <div className="flex items-center justify-center py-3">
-            <p className="text-xs text-muted-foreground">No content submitted yet</p>
-          </div>
-        )}
-
-        {!content && (
-          <Dialog open={editOpen} onOpenChange={setEditOpen}>
-            <DialogTrigger asChild>
-              <Button variant="outline" size="sm" className="w-full">
-                <FileText className="h-3.5 w-3.5 mr-1" /> Add Content
-              </Button>
-            </DialogTrigger>
-            <DialogContent>
-              <DialogHeader>
-                <DialogTitle>Add: {label}</DialogTitle>
-              </DialogHeader>
-              <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-                <div className="space-y-2">
-                  <Label>Content / Notes</Label>
-                  <Textarea {...register("bodyText")} rows={5} placeholder="Enter content here..." />
-                </div>
-                <div className="space-y-2">
-                  <Label>Admin Notes</Label>
-                  <Textarea {...register("adminNotes")} rows={2} placeholder="Internal notes..." />
-                </div>
-                <div className="flex gap-3">
-                  <Button type="button" variant="outline" onClick={() => setEditOpen(false)} className="flex-1">Cancel</Button>
-                  <Button type="submit" disabled={loading} className="flex-1">{loading ? "Saving..." : "Save"}</Button>
-                </div>
-              </form>
-            </DialogContent>
-          </Dialog>
+          <>
+            <div className="flex items-center justify-center py-3">
+              <p className="text-xs text-muted-foreground">No content submitted yet</p>
+            </div>
+            <Dialog open={editOpen} onOpenChange={setEditOpen}>
+              <DialogTrigger asChild>
+                <Button variant="outline" size="sm" className="w-full">
+                  <FileText className="h-3.5 w-3.5 mr-1" /> Add Content
+                </Button>
+              </DialogTrigger>
+              {dialogContent}
+            </Dialog>
+          </>
         )}
       </CardContent>
     </Card>

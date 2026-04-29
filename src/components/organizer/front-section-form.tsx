@@ -5,29 +5,37 @@ import { useForm } from "react-hook-form";
 import { upsertFrontSectionContent } from "@/actions/front-section";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { ContentStatusBadge } from "@/components/shared/status-badge";
 import { UploadButton } from "@/lib/uploadthing";
-import { CheckCircle, ChevronDown, ChevronUp, FileText, X } from "lucide-react";
+import { CheckCircle, ChevronDown, ChevronUp, FileText, Image, X } from "lucide-react";
 import { useRouter } from "next/navigation";
 
 interface OrganizerFrontSectionFormProps {
   eventId: string;
   contentType: string;
   label: string;
+  defaultTitle: string;
   content: {
     id: string;
+    title: string;
     bodyText: string | null;
     fileUrls: string[];
     status: string;
   } | null;
 }
 
+function isImageUrl(url: string) {
+  return /\.(jpg|jpeg|png|gif|webp|svg)(\?|$)/i.test(url);
+}
+
 export function OrganizerFrontSectionForm({
   eventId,
   contentType,
   label,
+  defaultTitle,
   content,
 }: OrganizerFrontSectionFormProps) {
   const [expanded, setExpanded] = useState(!content || content.status === "pending");
@@ -36,16 +44,19 @@ export function OrganizerFrontSectionForm({
   const router = useRouter();
 
   const { register, handleSubmit } = useForm({
-    defaultValues: { bodyText: content?.bodyText ?? "" },
+    defaultValues: {
+      title: content?.title ?? defaultTitle,
+      bodyText: content?.bodyText ?? "",
+    },
   });
 
-  const onSubmit = async (data: { bodyText: string }) => {
+  const onSubmit = async (data: { title: string; bodyText: string }) => {
     setLoading(true);
     try {
       await upsertFrontSectionContent({
         eventId,
         contentType: contentType as "president_photo" | "welcome_address" | "executives_list" | "committee_members" | "sponsors_list" | "event_details" | "other",
-        title: label,
+        title: data.title || label,
         bodyText: data.bodyText,
         fileUrls,
       });
@@ -72,10 +83,10 @@ export function OrganizerFrontSectionForm({
               <div className="h-5 w-5 rounded-full border-2 border-muted-foreground/40" />
             )}
             <div>
-              <CardTitle className="text-sm font-medium">{label}</CardTitle>
-              {content && !isDone && (
-                <ContentStatusBadge status={content.status} />
-              )}
+              <CardTitle className="text-sm font-medium">
+                {content?.title || label}
+              </CardTitle>
+              {content && !isDone && <ContentStatusBadge status={content.status} />}
               {isDone && <p className="text-xs text-green-600">Completed by designer</p>}
             </div>
           </div>
@@ -87,6 +98,13 @@ export function OrganizerFrontSectionForm({
         <CardContent>
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
             <div className="space-y-2">
+              <Label>Page Title</Label>
+              <Input
+                {...register("title")}
+                placeholder="Enter a title for this page..."
+              />
+            </div>
+            <div className="space-y-2">
               <Label>Content</Label>
               <Textarea
                 {...register("bodyText")}
@@ -95,7 +113,7 @@ export function OrganizerFrontSectionForm({
               />
             </div>
             <div className="space-y-2">
-              <Label>Upload Files (photos, documents)</Label>
+              <Label>Upload Images / Files</Label>
               <UploadButton
                 endpoint="frontSectionFiles"
                 onClientUploadComplete={(res) => {
@@ -104,14 +122,36 @@ export function OrganizerFrontSectionForm({
                 onUploadError={(err) => alert(`Upload error: ${err.message}`)}
               />
               {fileUrls.length > 0 && (
-                <div className="flex flex-wrap gap-1 mt-1">
+                <div className="flex flex-wrap gap-2 mt-2">
                   {fileUrls.map((url, i) => (
-                    <div key={i} className="flex items-center gap-1 text-xs bg-muted px-2 py-1 rounded">
-                      <FileText className="h-3 w-3" />
-                      File {i + 1}
-                      <button type="button" onClick={() => setFileUrls((p) => p.filter((_, j) => j !== i))}>
-                        <X className="h-3 w-3" />
-                      </button>
+                    <div key={i} className="relative group">
+                      {isImageUrl(url) ? (
+                        <div className="relative">
+                          <img
+                            src={url}
+                            alt={`Upload ${i + 1}`}
+                            className="h-20 w-20 object-cover rounded border"
+                          />
+                          <button
+                            type="button"
+                            onClick={() => setFileUrls((p) => p.filter((_, j) => j !== i))}
+                            className="absolute -top-1.5 -right-1.5 bg-destructive text-destructive-foreground rounded-full h-5 w-5 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+                          >
+                            <X className="h-3 w-3" />
+                          </button>
+                        </div>
+                      ) : (
+                        <div className="flex items-center gap-1 text-xs bg-muted px-2 py-1.5 rounded border">
+                          <FileText className="h-3 w-3 flex-shrink-0" />
+                          <span className="max-w-[100px] truncate">File {i + 1}</span>
+                          <button
+                            type="button"
+                            onClick={() => setFileUrls((p) => p.filter((_, j) => j !== i))}
+                          >
+                            <X className="h-3 w-3" />
+                          </button>
+                        </div>
+                      )}
                     </div>
                   ))}
                 </div>
