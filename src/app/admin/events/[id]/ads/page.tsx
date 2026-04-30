@@ -8,6 +8,7 @@ import { ArrowLeft, FileImage, DollarSign, Clock, CheckCircle } from "lucide-rea
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { AdStatusFilter } from "@/components/admin/ad-status-filter";
+import { AdminCreateAdDialog } from "@/components/admin/create-ad-dialog";
 
 export default async function EventAdsPage({
   params,
@@ -36,10 +37,11 @@ export default async function EventAdsPage({
         <Link href={`/admin/events/${id}`}>
           <Button variant="ghost" size="sm"><ArrowLeft className="h-4 w-4 mr-1" /> Back</Button>
         </Link>
-        <div>
+        <div className="flex-1">
           <h2 className="text-2xl font-bold">Ads</h2>
           <p className="text-muted-foreground">{event.name} · {ads.length} total ads</p>
         </div>
+        <AdminCreateAdDialog eventId={id} />
       </div>
 
       <div className="grid grid-cols-3 gap-3">

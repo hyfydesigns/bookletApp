@@ -11,6 +11,7 @@ import { UpdateEventStatusSelect } from "@/components/admin/update-event-status"
 import { EditEventDialog } from "@/components/admin/edit-event-dialog";
 import { DeleteWithBackupDialog } from "@/components/admin/delete-with-backup-dialog";
 import { DeleteAdButton } from "@/components/admin/delete-ad-button";
+import { AdminCreateAdDialog } from "@/components/admin/create-ad-dialog";
 
 export default async function AdminEventDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -134,9 +135,12 @@ export default async function AdminEventDetailPage({ params }: { params: Promise
           <Card>
             <CardHeader className="flex flex-row items-center justify-between pb-3">
               <CardTitle className="text-sm font-medium">Ads ({event.ads.length})</CardTitle>
-              <Link href={`/admin/events/${id}/ads`}>
-                <Button variant="outline" size="sm">Manage Ads</Button>
-              </Link>
+              <div className="flex items-center gap-2">
+                <AdminCreateAdDialog eventId={id} />
+                <Link href={`/admin/events/${id}/ads`}>
+                  <Button variant="outline" size="sm">Manage Ads</Button>
+                </Link>
+              </div>
             </CardHeader>
             <CardContent>
               {event.ads.length === 0 ? (
