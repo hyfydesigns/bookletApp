@@ -28,7 +28,7 @@ const schema = z.object({
 export function AdminCreateAdDialog({ eventId }: { eventId: string }) {
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [uploadedFiles, setUploadedFiles] = useState<string[]>([]);
+  const [uploadedFiles, setUploadedFiles] = useState<{ url: string; name: string }[]>([]);
   const router = useRouter();
 
   const { register, handleSubmit, setValue, watch, reset, formState: { errors } } = useForm({
@@ -41,7 +41,7 @@ export function AdminCreateAdDialog({ eventId }: { eventId: string }) {
   const onSubmit = async (data: z.infer<typeof schema>) => {
     setLoading(true);
     try {
-      await createAd({ ...data, eventId, submittedFiles: uploadedFiles });
+      await createAd({ ...data, eventId, submittedFiles: uploadedFiles.map((f) => f.url) });
       reset();
       setUploadedFiles([]);
       setOpen(false);
@@ -104,16 +104,16 @@ export function AdminCreateAdDialog({ eventId }: { eventId: string }) {
             <UploadButton
               endpoint="adFiles"
               onClientUploadComplete={(res) => {
-                if (res) setUploadedFiles((prev) => [...prev, ...res.map((r) => r.url)]);
+                if (res) setUploadedFiles((prev) => [...prev, ...res.map((r) => ({ url: r.url, name: r.name }))]);
               }}
               onUploadError={(err) => alert(`Upload error: ${err.message}`)}
             />
             {uploadedFiles.length > 0 && (
               <div className="flex flex-wrap gap-1 mt-2">
-                {uploadedFiles.map((url, i) => (
+                {uploadedFiles.map((file, i) => (
                   <div key={i} className="flex items-center gap-1 text-xs bg-muted px-2 py-1 rounded">
-                    <FileText className="h-3 w-3" />
-                    File {i + 1}
+                    <FileText className="h-3 w-3 flex-shrink-0" />
+                    <span className="max-w-[140px] truncate">{file.name}</span>
                     <button type="button" onClick={() => setUploadedFiles((p) => p.filter((_, j) => j !== i))}>
                       <X className="h-3 w-3" />
                     </button>

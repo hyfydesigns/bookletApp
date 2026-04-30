@@ -40,7 +40,9 @@ export function OrganizerFrontSectionForm({
 }: OrganizerFrontSectionFormProps) {
   const [expanded, setExpanded] = useState(!content || content.status === "pending");
   const [loading, setLoading] = useState(false);
-  const [fileUrls, setFileUrls] = useState<string[]>(content?.fileUrls ?? []);
+  const [fileUrls, setFileUrls] = useState<{ url: string; name: string }[]>(
+    (content?.fileUrls ?? []).map((url, i) => ({ url, name: `File ${i + 1}` }))
+  );
   const router = useRouter();
 
   const { register, handleSubmit } = useForm({
@@ -58,7 +60,7 @@ export function OrganizerFrontSectionForm({
         contentType: contentType as "president_photo" | "welcome_address" | "executives_list" | "committee_members" | "sponsors_list" | "event_details" | "other",
         title: data.title,
         bodyText: data.bodyText,
-        fileUrls,
+        fileUrls: fileUrls.map((f) => f.url),
       });
       router.refresh();
       setExpanded(false);
@@ -117,19 +119,19 @@ export function OrganizerFrontSectionForm({
               <UploadButton
                 endpoint="frontSectionFiles"
                 onClientUploadComplete={(res) => {
-                  if (res) setFileUrls((prev) => [...prev, ...res.map((r) => r.url)]);
+                  if (res) setFileUrls((prev) => [...prev, ...res.map((r) => ({ url: r.url, name: r.name }))]);
                 }}
                 onUploadError={(err) => alert(`Upload error: ${err.message}`)}
               />
               {fileUrls.length > 0 && (
                 <div className="flex flex-wrap gap-2 mt-2">
-                  {fileUrls.map((url, i) => (
+                  {fileUrls.map((file, i) => (
                     <div key={i} className="relative group">
-                      {isImageUrl(url) ? (
+                      {isImageUrl(file.url) ? (
                         <div className="relative">
                           <img
-                            src={url}
-                            alt={`Upload ${i + 1}`}
+                            src={file.url}
+                            alt={file.name}
                             className="h-20 w-20 object-cover rounded border"
                           />
                           <button
@@ -143,7 +145,7 @@ export function OrganizerFrontSectionForm({
                       ) : (
                         <div className="flex items-center gap-1 text-xs bg-muted px-2 py-1.5 rounded border">
                           <FileText className="h-3 w-3 flex-shrink-0" />
-                          <span className="max-w-[100px] truncate">File {i + 1}</span>
+                          <span className="max-w-[100px] truncate">{file.name}</span>
                           <button
                             type="button"
                             onClick={() => setFileUrls((p) => p.filter((_, j) => j !== i))}

@@ -42,7 +42,9 @@ interface OrganizerEditAdDialogProps {
 export function OrganizerEditAdDialog({ ad }: OrganizerEditAdDialogProps) {
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [files, setFiles] = useState<string[]>(ad.submittedFiles);
+  const [files, setFiles] = useState<{ url: string; name: string }[]>(
+    ad.submittedFiles.map((url, i) => ({ url, name: `File ${i + 1}` }))
+  );
   const router = useRouter();
 
   const canEdit = ad.adContentStatus === "pending";
@@ -62,7 +64,7 @@ export function OrganizerEditAdDialog({ ad }: OrganizerEditAdDialogProps) {
   const onSubmit = async (data: FormValues) => {
     setLoading(true);
     try {
-      await updateAd(ad.id, { ...data, submittedFiles: files });
+      await updateAd(ad.id, { ...data, submittedFiles: files.map((f) => f.url) });
       setOpen(false);
       router.refresh();
     } finally {
@@ -118,16 +120,16 @@ export function OrganizerEditAdDialog({ ad }: OrganizerEditAdDialogProps) {
             <UploadButton
               endpoint="adFiles"
               onClientUploadComplete={(res) => {
-                if (res) setFiles((prev) => [...prev, ...res.map((r) => r.url)]);
+                if (res) setFiles((prev) => [...prev, ...res.map((r) => ({ url: r.url, name: r.name }))]);
               }}
               onUploadError={(err) => alert(`Upload error: ${err.message}`)}
             />
             {files.length > 0 && (
               <div className="flex flex-wrap gap-1 mt-1">
-                {files.map((url, i) => (
+                {files.map((file, i) => (
                   <div key={i} className="flex items-center gap-1 text-xs bg-muted px-2 py-1 rounded">
-                    <FileText className="h-3 w-3" />
-                    File {i + 1}
+                    <FileText className="h-3 w-3 flex-shrink-0" />
+                    <span className="max-w-[140px] truncate">{file.name}</span>
                     <button type="button" onClick={() => setFiles((p) => p.filter((_, j) => j !== i))}>
                       <X className="h-3 w-3" />
                     </button>
