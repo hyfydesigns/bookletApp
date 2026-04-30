@@ -14,6 +14,7 @@ export const ourFileRouter = {
   adFiles: f({
     image: { maxFileSize: "16MB", maxFileCount: 10 },
     pdf: { maxFileSize: "32MB", maxFileCount: 5 },
+    blob: { maxFileSize: "32MB", maxFileCount: 5 },
   })
     .middleware(async () => {
       const userId = await getAuthUserId();
@@ -47,6 +48,7 @@ export const ourFileRouter = {
   frontSectionFiles: f({
     image: { maxFileSize: "16MB", maxFileCount: 10 },
     pdf: { maxFileSize: "32MB", maxFileCount: 5 },
+    blob: { maxFileSize: "32MB", maxFileCount: 5 },
   })
     .middleware(async () => {
       const userId = await getAuthUserId();
