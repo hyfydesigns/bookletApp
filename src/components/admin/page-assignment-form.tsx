@@ -46,11 +46,11 @@ export function PageAssignmentForm({ ad, eventAds, eventId, totalPages }: PageAs
 
   const potentialPartner =
     ad.adType === "half_page" && pageNum
-      ? adsOnEnteredPage.find((a) => a.adType === "half_page")
+      ? adsOnEnteredPage.find((a) => a.adType === "half_page" && a.id !== ad.id)
       : null;
 
   const fullPageConflict =
-    pageNum ? adsOnEnteredPage.find((a) => a.adType === "full_page") : null;
+    pageNum ? adsOnEnteredPage.find((a) => a.adType === "full_page" || a.adType === "free") : null;
 
   const halfPagesFull =
     ad.adType === "half_page" && pageNum
@@ -58,7 +58,7 @@ export function PageAssignmentForm({ ad, eventAds, eventId, totalPages }: PageAs
       : false;
 
   const fullPageOccupied =
-    ad.adType === "full_page" && adsOnEnteredPage.length > 0;
+    (ad.adType === "full_page" || ad.adType === "free") && adsOnEnteredPage.length > 0;
 
   const clientError =
     pageNum && pageNum > totalPages

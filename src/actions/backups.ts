@@ -159,7 +159,7 @@ async function restoreEvent(
       data: {
         eventId: newEvent.id,
         adCode: `${ad.adCode}-R${rand}`,
-        adType: ad.adType as "full_page" | "half_page",
+        adType: ad.adType as "full_page" | "half_page" | "free",
         advertiserName: ad.advertiserName,
         contactPerson: ad.contactPerson ?? null,
         contactEmail: ad.contactEmail ?? null,

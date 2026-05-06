@@ -20,6 +20,7 @@ export default async function AdminEventDetailPage({ params }: { params: Promise
 
   const fullPageAds = event.ads.filter((a) => a.adType === "full_page").length;
   const halfPageAds = event.ads.filter((a) => a.adType === "half_page").length;
+  const freeAds = event.ads.filter((a) => a.adType === "free").length;
   const totalRevenue = event.ads.reduce((sum, a) => sum + Number(a.amountPaid), 0);
   const totalExpected = event.ads.reduce((sum, a) => sum + Number(a.paymentAmount), 0);
   const pendingAds = event.ads.filter((a) => a.adContentStatus === "pending").length;
@@ -81,6 +82,7 @@ export default async function AdminEventDetailPage({ params }: { params: Promise
                 frontSectionPages={event.frontSectionPages}
                 fullPageAds={fullPageAds}
                 halfPageAds={halfPageAds}
+                freeAds={freeAds}
               />
             </CardContent>
           </Card>
@@ -155,7 +157,7 @@ export default async function AdminEventDetailPage({ params }: { params: Promise
                           <span className="text-sm font-medium">{ad.advertiserName}</span>
                         </div>
                         <span className="text-xs text-muted-foreground">
-                          {ad.adType === "full_page" ? "Full page" : "Half page"} · {formatCurrency(Number(ad.paymentAmount))}
+                          {ad.adType === "full_page" ? "Full page" : ad.adType === "half_page" ? "Half page" : "Free"} · {formatCurrency(Number(ad.paymentAmount))}
                         </span>
                       </div>
                       <div className="flex items-center gap-2">

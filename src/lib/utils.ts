@@ -28,10 +28,11 @@ export function calcBookletProgress(
   totalPages: number,
   frontSectionPages: number,
   fullPageAds: number,
-  halfPageAds: number
+  halfPageAds: number,
+  freeAds: number = 0
 ) {
   const adPagesAvailable = totalPages - frontSectionPages;
-  const adPagesUsed = fullPageAds + Math.ceil(halfPageAds / 2);
+  const adPagesUsed = fullPageAds + freeAds + Math.ceil(halfPageAds / 2);
   const adPagesRemaining = Math.max(0, adPagesAvailable - adPagesUsed);
   const completionPercent =
     adPagesAvailable > 0
@@ -40,6 +41,15 @@ export function calcBookletProgress(
   return { adPagesAvailable, adPagesUsed, adPagesRemaining, completionPercent };
 }
 
-export function getAdPrice(adType: "full_page" | "half_page") {
-  return adType === "full_page" ? 100 : 50;
+export function getAdPrice(adType: "full_page" | "half_page" | "free") {
+  if (adType === "full_page") return 100;
+  if (adType === "half_page") return 50;
+  return 0;
+}
+
+export function formatAdType(adType: string) {
+  if (adType === "full_page") return "Full Page";
+  if (adType === "half_page") return "Half Page";
+  if (adType === "free") return "Free";
+  return adType;
 }

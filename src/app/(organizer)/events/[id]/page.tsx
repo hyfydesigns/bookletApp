@@ -16,6 +16,7 @@ export default async function OrganizerEventPage({ params }: { params: Promise<{
 
   const fullPageAds = event.ads.filter((a) => a.adType === "full_page").length;
   const halfPageAds = event.ads.filter((a) => a.adType === "half_page").length;
+  const freeAds = event.ads.filter((a) => a.adType === "free").length;
   const totalRevenue = event.ads.reduce((sum, a) => sum + Number(a.amountPaid), 0);
   const totalExpected = event.ads.reduce((sum, a) => sum + Number(a.paymentAmount), 0);
 
@@ -61,6 +62,7 @@ export default async function OrganizerEventPage({ params }: { params: Promise<{
                 frontSectionPages={event.frontSectionPages}
                 fullPageAds={fullPageAds}
                 halfPageAds={halfPageAds}
+                freeAds={freeAds}
               />
             </CardContent>
           </Card>

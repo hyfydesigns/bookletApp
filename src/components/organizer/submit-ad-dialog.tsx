@@ -17,7 +17,7 @@ import { useRouter } from "next/navigation";
 
 const schema = z.object({
   advertiserName: z.string().min(1, "Advertiser name is required"),
-  adType: z.enum(["full_page", "half_page"]),
+  adType: z.enum(["full_page", "half_page", "free"]),
   contactPerson: z.string().optional(),
   contactEmail: z.string().email().optional().or(z.literal("")),
   contactPhone: z.string().optional(),
@@ -33,7 +33,7 @@ export function SubmitAdDialog({ eventId }: { eventId: string }) {
 
   const { register, handleSubmit, setValue, watch, reset, formState: { errors } } = useForm({
     resolver: zodResolver(schema),
-    defaultValues: { adType: "full_page" },
+    defaultValues: { adType: "full_page" as "full_page" | "half_page" | "free" },
   });
 
   const adType = watch("adType");
@@ -66,13 +66,14 @@ export function SubmitAdDialog({ eventId }: { eventId: string }) {
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
           <div className="space-y-2">
             <Label>Ad Type *</Label>
-            <Select defaultValue="full_page" onValueChange={(v) => setValue("adType", v as "full_page" | "half_page")}>
+            <Select defaultValue="full_page" onValueChange={(v) => setValue("adType", v as "full_page" | "half_page" | "free")}>
               <SelectTrigger>
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="full_page">Full Page — $100</SelectItem>
                 <SelectItem value="half_page">Half Page — $50</SelectItem>
+                <SelectItem value="free">Free</SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -141,7 +142,7 @@ export function SubmitAdDialog({ eventId }: { eventId: string }) {
           <div className="flex gap-3 pt-2">
             <Button type="button" variant="outline" onClick={() => setOpen(false)} className="flex-1">Cancel</Button>
             <Button type="submit" disabled={loading} className="flex-1">
-              {loading ? "Submitting..." : `Submit ${adType === "full_page" ? "Full Page ($100)" : "Half Page ($50)"}`}
+              {loading ? "Submitting..." : adType === "full_page" ? "Submit Full Page ($100)" : adType === "half_page" ? "Submit Half Page ($50)" : "Submit Free Ad"}
             </Button>
           </div>
         </form>

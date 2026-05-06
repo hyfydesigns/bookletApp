@@ -9,7 +9,7 @@ import { createNotification } from "./notifications";
 
 const AdSchema = z.object({
   eventId: z.string().min(1),
-  adType: z.enum(["full_page", "half_page"]),
+  adType: z.enum(["full_page", "half_page", "free"]),
   advertiserName: z.string().min(1, "Advertiser name is required"),
   contactPerson: z.string().optional(),
   contactEmail: z.string().email().optional().or(z.literal("")),
@@ -45,6 +45,8 @@ export async function createAd(data: z.infer<typeof AdSchema>) {
       ...parsed,
       adCode,
       paymentAmount,
+      // Free ads are automatically marked as received since $0 is owed
+      ...(parsed.adType === "free" ? { paymentStatus: "received" } : {}),
       submittedById: user.id,
     },
   });
@@ -164,7 +166,7 @@ export async function updateAdPageAssignment(
     where: { eventId: ad.eventId, pageNumber, id: { not: id } },
   });
 
-  if (ad.adType === "full_page") {
+  if (ad.adType === "full_page" || ad.adType === "free") {
     if (adsOnPage.length > 0) {
       throw new Error(`Page ${pageNumber} is already occupied by another ad`);
     }
@@ -177,7 +179,7 @@ export async function updateAdPageAssignment(
   }
 
   // Half page — check for conflicts
-  const fullPageOnThisPage = adsOnPage.find((a) => a.adType === "full_page");
+  const fullPageOnThisPage = adsOnPage.find((a) => a.adType === "full_page" || a.adType === "free");
   if (fullPageOnThisPage) {
     throw new Error(`Page ${pageNumber} already has a full-page ad`);
   }

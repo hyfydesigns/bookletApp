@@ -94,7 +94,7 @@ export default async function EventAdsPage({
                     <span className="text-xs font-mono text-muted-foreground">{ad.adCode}</span>
                     <span className="font-medium">{ad.advertiserName}</span>
                     <span className="text-xs text-muted-foreground">
-                      {ad.adType === "full_page" ? "Full Page" : "Half Page"}
+                      {ad.adType === "full_page" ? "Full Page" : ad.adType === "half_page" ? "Half Page" : "Free"}
                     </span>
                     {ad.pageNumber && (
                       <span className="text-xs bg-muted px-1.5 py-0.5 rounded">Pg {ad.pageNumber}</span>

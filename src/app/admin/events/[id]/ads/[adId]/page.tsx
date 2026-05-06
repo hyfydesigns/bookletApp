@@ -32,7 +32,7 @@ export default async function AdDetailPage({
             <h2 className="text-2xl font-bold">{ad.advertiserName}</h2>
           </div>
           <p className="text-muted-foreground">
-            {ad.adType === "full_page" ? "Full Page" : "Half Page"} · {ad.event.name}
+            {ad.adType === "full_page" ? "Full Page" : ad.adType === "half_page" ? "Half Page" : "Free"} · {ad.event.name}
           </p>
         </div>
         <div className="flex items-center gap-2">

@@ -70,6 +70,7 @@ export default async function ReportsPage() {
           const expected = event.ads.reduce((s, a) => s + Number(a.paymentAmount), 0);
           const fullAds = event.ads.filter((a) => a.adType === "full_page").length;
           const halfAds = event.ads.filter((a) => a.adType === "half_page").length;
+          const freeAds = event.ads.filter((a) => a.adType === "free").length;
           const unpaid = event.ads.filter((a) => a.paymentStatus !== "received").length;
 
           return (
@@ -86,7 +87,7 @@ export default async function ReportsPage() {
                   <div>
                     <p className="text-muted-foreground text-xs">Total Ads</p>
                     <p className="font-semibold">{event.ads.length}</p>
-                    <p className="text-xs text-muted-foreground">{fullAds} full · {halfAds} half</p>
+                    <p className="text-xs text-muted-foreground">{fullAds} full · {halfAds} half{freeAds > 0 ? ` · ${freeAds} free` : ""}</p>
                   </div>
                   <div>
                     <p className="text-muted-foreground text-xs">Revenue Collected</p>

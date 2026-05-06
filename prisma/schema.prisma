@@ -40,6 +40,7 @@ enum ContentStatus {
 enum AdType {
   full_page
   half_page
+  free
 }
 
 enum AdContentStatus {

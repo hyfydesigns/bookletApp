@@ -45,7 +45,7 @@ export async function GET(request: NextRequest) {
     ad.contactPerson ?? "",
     ad.contactEmail ?? "",
     ad.contactPhone ?? "",
-    ad.adType === "full_page" ? "Full Page" : "Half Page",
+    ad.adType === "full_page" ? "Full Page" : ad.adType === "half_page" ? "Half Page" : "Free",
     ad.adContentStatus,
     ad.paymentStatus,
     `$${Number(ad.paymentAmount).toFixed(2)}`,

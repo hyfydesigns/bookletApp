@@ -7,6 +7,7 @@ interface BookletProgressProps {
   frontSectionPages: number;
   fullPageAds: number;
   halfPageAds: number;
+  freeAds?: number;
 }
 
 export function BookletProgress({
@@ -14,9 +15,10 @@ export function BookletProgress({
   frontSectionPages,
   fullPageAds,
   halfPageAds,
+  freeAds = 0,
 }: BookletProgressProps) {
   const { adPagesAvailable, adPagesUsed, adPagesRemaining, completionPercent } =
-    calcBookletProgress(totalPages, frontSectionPages, fullPageAds, halfPageAds);
+    calcBookletProgress(totalPages, frontSectionPages, fullPageAds, halfPageAds, freeAds);
 
   return (
     <div className="space-y-3">
@@ -43,7 +45,7 @@ export function BookletProgress({
         </div>
       </div>
       <p className="text-xs text-muted-foreground text-center">
-        {fullPageAds} full-page · {halfPageAds} half-page · {totalPages} total pages
+        {fullPageAds} full-page · {halfPageAds} half-page{freeAds > 0 ? ` · ${freeAds} free` : ""} · {totalPages} total pages
       </p>
     </div>
   );
