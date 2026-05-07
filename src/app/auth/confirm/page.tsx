@@ -16,11 +16,17 @@ export default function AuthConfirmPage() {
     const supabase = createClient();
     let settled = false;
 
+    // Capture invite type from URL before async work begins
+    const urlParams = new URLSearchParams(window.location.search);
+    const authType = urlParams.get("type");
+    const isInvite = authType === "invite";
+
     async function redirect() {
       if (settled) return;
       settled = true;
       await syncUser();
-      router.replace("/dashboard");
+      // Invite flow: send user to set-password page first
+      router.replace(isInvite ? "/auth/set-password" : "/dashboard");
     }
 
     // onAuthStateChange fires when the client detects hash-based tokens

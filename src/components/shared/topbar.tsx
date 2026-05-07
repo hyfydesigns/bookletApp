@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Bell, ChevronDown, LogOut } from "lucide-react";
+import { Bell, ChevronDown, KeyRound, LogOut } from "lucide-react";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -15,6 +15,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { ChangePasswordDialog } from "@/components/shared/change-password-dialog";
 
 interface TopbarProps {
   title: string;
@@ -25,6 +26,7 @@ export function Topbar({ title, unreadCount = 0 }: TopbarProps) {
   const router = useRouter();
   const [userEmail, setUserEmail] = useState<string | null>(null);
   const [userName, setUserName] = useState<string | null>(null);
+  const [changePasswordOpen, setChangePasswordOpen] = useState(false);
 
   useEffect(() => {
     const supabase = createClient();
@@ -84,6 +86,14 @@ export function Topbar({ title, unreadCount = 0 }: TopbarProps) {
             </DropdownMenuLabel>
             <DropdownMenuSeparator />
             <DropdownMenuItem
+              className="cursor-pointer"
+              onClick={() => setChangePasswordOpen(true)}
+            >
+              <KeyRound className="mr-2 h-4 w-4" />
+              Change Password
+            </DropdownMenuItem>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem
               className="text-destructive focus:text-destructive cursor-pointer"
               onClick={handleSignOut}
             >
@@ -93,6 +103,11 @@ export function Topbar({ title, unreadCount = 0 }: TopbarProps) {
           </DropdownMenuContent>
         </DropdownMenu>
       </div>
+
+      <ChangePasswordDialog
+        open={changePasswordOpen}
+        onOpenChange={setChangePasswordOpen}
+      />
     </header>
   );
 }
