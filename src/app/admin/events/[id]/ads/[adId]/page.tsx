@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { AdStatusBadge, PaymentBadge } from "@/components/shared/status-badge";
 import { formatCurrency, formatDate } from "@/lib/utils";
-import { ArrowLeft, Mail, Phone, User, FileText, ExternalLink, Download } from "lucide-react";
+import { ArrowLeft, ChevronLeft, ChevronRight, Mail, Phone, User, FileText, ExternalLink, Download } from "lucide-react";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { AdStatusManager } from "@/components/admin/ad-status-manager";
@@ -20,12 +20,43 @@ export default async function AdDetailPage({
   const [ad, eventAds] = await Promise.all([getAd(adId), getAds(id)]);
   if (!ad) notFound();
 
+  const currentIndex = eventAds.findIndex((a) => a.id === adId);
+  const prevAd = currentIndex > 0 ? eventAds[currentIndex - 1] : null;
+  const nextAd = currentIndex < eventAds.length - 1 ? eventAds[currentIndex + 1] : null;
+
   return (
     <div className="space-y-6">
       <div className="flex items-center gap-4">
         <Link href={`/admin/events/${id}/ads`}>
           <Button variant="ghost" size="sm"><ArrowLeft className="h-4 w-4 mr-1" /> Back</Button>
         </Link>
+        <div className="flex items-center gap-1">
+          {prevAd ? (
+            <Link href={`/admin/events/${id}/ads/${prevAd.id}`}>
+              <Button variant="outline" size="sm" title={prevAd.advertiserName}>
+                <ChevronLeft className="h-4 w-4" />
+              </Button>
+            </Link>
+          ) : (
+            <Button variant="outline" size="sm" disabled>
+              <ChevronLeft className="h-4 w-4" />
+            </Button>
+          )}
+          <span className="text-xs text-muted-foreground px-1 tabular-nums">
+            {currentIndex + 1} / {eventAds.length}
+          </span>
+          {nextAd ? (
+            <Link href={`/admin/events/${id}/ads/${nextAd.id}`}>
+              <Button variant="outline" size="sm" title={nextAd.advertiserName}>
+                <ChevronRight className="h-4 w-4" />
+              </Button>
+            </Link>
+          ) : (
+            <Button variant="outline" size="sm" disabled>
+              <ChevronRight className="h-4 w-4" />
+            </Button>
+          )}
+        </div>
         <div className="flex-1">
           <div className="flex items-center gap-2">
             <span className="text-xs font-mono text-muted-foreground">{ad.adCode}</span>
