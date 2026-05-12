@@ -8,15 +8,7 @@ import { createNotification } from "./notifications";
 
 const ContentSchema = z.object({
   eventId: z.string().min(1),
-  contentType: z.enum([
-    "president_photo",
-    "welcome_address",
-    "executives_list",
-    "committee_members",
-    "sponsors_list",
-    "event_details",
-    "other",
-  ]),
+  contentType: z.string().min(1),
   title: z.string().optional().default(""),
   bodyText: z.string().optional(),
   fileUrls: z.array(z.string()).default([]),
@@ -38,7 +30,7 @@ export async function upsertFrontSectionContent(
   }
 
   const existing = await prisma.frontSectionContent.findFirst({
-    where: { eventId: parsed.eventId, contentType: parsed.contentType as "president_photo" | "welcome_address" | "executives_list" | "committee_members" | "sponsors_list" | "event_details" | "other" },
+    where: { eventId: parsed.eventId, contentType: parsed.contentType },
   });
 
   let content;
@@ -121,6 +113,63 @@ export async function updateFrontSectionPageNumber(id: string, pageNumber: numbe
   const content = await prisma.frontSectionContent.update({
     where: { id },
     data: { pageNumber },
+  });
+  revalidatePath(`/admin/events/${content.eventId}/front-section`);
+  return content;
+}
+
+export async function addFrontSectionItem(eventId: string, label: string) {
+  await requireAdmin();
+  const event = await prisma.event.findUnique({ where: { id: eventId } });
+  if (!event) throw new Error("Event not found");
+
+  // Generate a unique contentType key for this custom section
+  const contentType = `custom_${Date.now()}`;
+
+  const content = await prisma.frontSectionContent.create({
+    data: {
+      eventId,
+      contentType,
+      title: label,
+      status: "pending",
+    },
+  });
+
+  // Append to the event's order
+  await prisma.event.update({
+    where: { id: eventId },
+    data: { frontSectionOrder: [...(event.frontSectionOrder ?? []), contentType] },
+  });
+
+  revalidatePath(`/admin/events/${eventId}/front-section`);
+  return content;
+}
+
+export async function deleteFrontSectionItem(id: string) {
+  await requireAdmin();
+  const content = await prisma.frontSectionContent.delete({ where: { id } });
+
+  // Remove from event order
+  const event = await prisma.event.findUnique({ where: { id: content.eventId } });
+  if (event) {
+    await prisma.event.update({
+      where: { id: content.eventId },
+      data: {
+        frontSectionOrder: (event.frontSectionOrder ?? []).filter(
+          (t) => t !== content.contentType
+        ),
+      },
+    });
+  }
+
+  revalidatePath(`/admin/events/${content.eventId}/front-section`);
+}
+
+export async function renameFrontSectionItem(id: string, title: string) {
+  await requireAdmin();
+  const content = await prisma.frontSectionContent.update({
+    where: { id },
+    data: { title },
   });
   revalidatePath(`/admin/events/${content.eventId}/front-section`);
   return content;

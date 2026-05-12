@@ -20,15 +20,6 @@ enum EventStatus {
   archived
 }
 
-enum ContentType {
-  president_photo
-  welcome_address
-  executives_list
-  committee_members
-  sponsors_list
-  event_details
-  other
-}
 
 enum ContentStatus {
   pending
@@ -136,7 +127,7 @@ model Event {
 model FrontSectionContent {
   id            String        @id @default(cuid())
   eventId       String
-  contentType   ContentType
+  contentType   String
   title         String
   bodyText      String?
   fileUrls      String[]      @default([])

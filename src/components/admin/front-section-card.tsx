@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useForm } from "react-hook-form";
-import { upsertFrontSectionContent, updateContentStatus, updateFrontSectionPageNumber } from "@/actions/front-section";
+import { upsertFrontSectionContent, updateContentStatus, updateFrontSectionPageNumber, renameFrontSectionItem } from "@/actions/front-section";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -37,6 +37,7 @@ interface FrontSectionCardProps {
   description: string;
   defaultTitle: string;
   totalFrontPages?: number;
+  isCustom?: boolean;
   content: {
     id: string;
     title: string;
@@ -55,6 +56,7 @@ export function FrontSectionCard({
   description,
   defaultTitle,
   totalFrontPages,
+  isCustom = false,
   content,
 }: FrontSectionCardProps) {
   const [editOpen, setEditOpen] = useState(false);
@@ -64,8 +66,17 @@ export function FrontSectionCard({
   );
   const [pageNum, setPageNum] = useState<string>(content?.pageNumber?.toString() ?? "");
   const [savingPage, setSavingPage] = useState(false);
+  const [editingLabel, setEditingLabel] = useState(false);
+  const [labelDraft, setLabelDraft] = useState(label);
   const router = useRouter();
   const Icon = ICON_MAP[contentType] ?? FileText;
+
+  const handleLabelSave = async () => {
+    if (!content || !labelDraft.trim()) return;
+    setEditingLabel(false);
+    await renameFrontSectionItem(content.id, labelDraft.trim());
+    router.refresh();
+  };
 
   const handlePageNumberSave = async () => {
     if (!content) return;
@@ -188,11 +199,36 @@ export function FrontSectionCard({
       <CardHeader className="pb-3">
         <div className="flex items-start justify-between">
           <div className="flex items-center gap-2">
-            <Icon className="h-5 w-5 text-muted-foreground" />
+            <Icon className="h-5 w-5 text-muted-foreground flex-shrink-0" />
             <div>
-              <CardTitle className="text-sm font-medium">
-                {content?.title || <span className="text-muted-foreground font-normal italic">{label}</span>}
-              </CardTitle>
+              {isCustom && content ? (
+                editingLabel ? (
+                  <input
+                    autoFocus
+                    value={labelDraft}
+                    onChange={(e) => setLabelDraft(e.target.value)}
+                    onBlur={handleLabelSave}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") handleLabelSave();
+                      if (e.key === "Escape") setEditingLabel(false);
+                    }}
+                    className="text-sm font-medium border-b border-primary bg-transparent outline-none w-40"
+                  />
+                ) : (
+                  <CardTitle
+                    className="text-sm font-medium cursor-pointer hover:text-primary flex items-center gap-1"
+                    onClick={() => setEditingLabel(true)}
+                    title="Click to rename"
+                  >
+                    {labelDraft}
+                    <Edit className="h-3 w-3 text-muted-foreground" />
+                  </CardTitle>
+                )
+              ) : (
+                <CardTitle className="text-sm font-medium">
+                  {content?.title || <span className="text-muted-foreground font-normal italic">{label}</span>}
+                </CardTitle>
+              )}
               <p className="text-xs text-muted-foreground">{description}</p>
             </div>
           </div>

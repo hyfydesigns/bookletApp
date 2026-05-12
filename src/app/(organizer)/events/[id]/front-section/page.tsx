@@ -6,24 +6,16 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { OrganizerFrontSectionForm } from "@/components/organizer/front-section-form";
 
-const DEFAULT_CONTENT_TYPES = [
-  { type: "president_photo", label: "Cover Page", defaultTitle: "Cover Page" },
-  { type: "welcome_address", label: "Welcome Address", defaultTitle: "" },
-  { type: "executives_list", label: "Executives / Board Members", defaultTitle: "" },
-  { type: "committee_members", label: "Planning Committee", defaultTitle: "" },
-  { type: "sponsors_list", label: "Sponsors List", defaultTitle: "" },
-  { type: "event_details", label: "Event Details / Program", defaultTitle: "" },
+const PREDEFINED = [
+  { type: "president_photo",  label: "Cover Page",                 defaultTitle: "Cover Page" },
+  { type: "welcome_address",  label: "Welcome Address",            defaultTitle: "" },
+  { type: "executives_list",  label: "Executives / Board Members", defaultTitle: "" },
+  { type: "committee_members",label: "Planning Committee",         defaultTitle: "" },
+  { type: "sponsors_list",    label: "Sponsors List",              defaultTitle: "" },
+  { type: "event_details",    label: "Event Details / Program",    defaultTitle: "" },
+  { type: "other",            label: "Other Content",              defaultTitle: "" },
 ];
-
-function applyOrder(contentTypes: typeof DEFAULT_CONTENT_TYPES, savedOrder: string[]) {
-  if (!savedOrder.length) return contentTypes;
-  const map = Object.fromEntries(contentTypes.map((ct) => [ct.type, ct]));
-  const ordered = savedOrder.map((type) => map[type]).filter(Boolean) as typeof DEFAULT_CONTENT_TYPES;
-  for (const ct of contentTypes) {
-    if (!savedOrder.includes(ct.type)) ordered.push(ct);
-  }
-  return ordered;
-}
+const PREDEFINED_TYPES = new Set(PREDEFINED.map((p) => p.type));
 
 export default async function OrgFrontSectionPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -31,8 +23,23 @@ export default async function OrgFrontSectionPage({ params }: { params: Promise<
   if (!event) notFound();
 
   const contentMap = Object.fromEntries(contents.map((c) => [c.contentType, c]));
+  const savedOrder: string[] = event.frontSectionOrder ?? [];
   const doneCount = contents.filter((c) => c.status === "done").length;
-  const orderedTypes = applyOrder(DEFAULT_CONTENT_TYPES, event.frontSectionOrder ?? []);
+
+  // Build ordered list: predefined + custom DB sections
+  const allTypes = [
+    ...PREDEFINED,
+    ...contents
+      .filter((c) => !PREDEFINED_TYPES.has(c.contentType))
+      .map((c) => ({ type: c.contentType, label: c.title || "Custom Section", defaultTitle: "" })),
+  ];
+
+  const ordered = savedOrder.length
+    ? [
+        ...savedOrder.map((t) => allTypes.find((a) => a.type === t)).filter(Boolean) as typeof allTypes,
+        ...allTypes.filter((a) => !savedOrder.includes(a.type)),
+      ]
+    : allTypes;
 
   return (
     <div className="space-y-6">
@@ -51,7 +58,7 @@ export default async function OrgFrontSectionPage({ params }: { params: Promise<
       </p>
 
       <div className="space-y-4">
-        {orderedTypes.map(({ type, label, defaultTitle }, index) => {
+        {ordered.map(({ type, label, defaultTitle }, index) => {
           const content = contentMap[type];
           return (
             <div key={type} className="flex items-start gap-3">
@@ -63,7 +70,6 @@ export default async function OrgFrontSectionPage({ params }: { params: Promise<
               </div>
               <div className="flex-1">
                 <OrganizerFrontSectionForm
-                  key={type}
                   eventId={id}
                   contentType={type}
                   label={label}

@@ -2,125 +2,205 @@
 
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { reorderFrontSection } from "@/actions/front-section";
+import { reorderFrontSection, addFrontSectionItem, deleteFrontSectionItem } from "@/actions/front-section";
 import { FrontSectionCard } from "@/components/admin/front-section-card";
 import { Button } from "@/components/ui/button";
-import { ChevronUp, ChevronDown } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { ChevronUp, ChevronDown, Plus, Trash2 } from "lucide-react";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 
-interface ContentTypeConfig {
-  type: string;
-  label: string;
+export interface SectionItem {
+  type: string;         // contentType key
+  label: string;        // display label
   description: string;
   defaultTitle: string;
-}
-
-interface ContentRecord {
-  id: string;
-  contentType: string;
-  title: string;
-  bodyText: string | null;
-  fileUrls: string[];
-  status: string;
-  pageNumber: number | null;
-  adminNotes: string | null;
+  isCustom: boolean;    // true = created by admin and exists in DB
+  content: {
+    id: string;
+    title: string;
+    bodyText: string | null;
+    fileUrls: string[];
+    status: string;
+    pageNumber: number | null;
+    adminNotes: string | null;
+  } | null;
 }
 
 interface FrontSectionOrderableListProps {
   eventId: string;
   totalFrontPages: number;
-  contentTypes: ContentTypeConfig[];
-  contentMap: Record<string, ContentRecord>;
-  savedOrder: string[];
-}
-
-function applyOrder(contentTypes: ContentTypeConfig[], savedOrder: string[]): ContentTypeConfig[] {
-  if (!savedOrder.length) return contentTypes;
-  const map = Object.fromEntries(contentTypes.map((ct) => [ct.type, ct]));
-  const ordered: ContentTypeConfig[] = [];
-  for (const type of savedOrder) {
-    if (map[type]) ordered.push(map[type]);
-  }
-  // Append any types not in savedOrder (newly added types)
-  for (const ct of contentTypes) {
-    if (!savedOrder.includes(ct.type)) ordered.push(ct);
-  }
-  return ordered;
+  items: SectionItem[];
 }
 
 export function FrontSectionOrderableList({
   eventId,
   totalFrontPages,
-  contentTypes,
-  contentMap,
-  savedOrder,
+  items: initialItems,
 }: FrontSectionOrderableListProps) {
-  const [order, setOrder] = useState<ContentTypeConfig[]>(() =>
-    applyOrder(contentTypes, savedOrder)
-  );
+  const [items, setItems] = useState<SectionItem[]>(initialItems);
   const [isPending, startTransition] = useTransition();
+  const [addLabel, setAddLabel] = useState("");
+  const [showAddInput, setShowAddInput] = useState(false);
   const router = useRouter();
 
   const move = (index: number, direction: "up" | "down") => {
-    const newOrder = [...order];
+    const newItems = [...items];
     const targetIndex = direction === "up" ? index - 1 : index + 1;
-    if (targetIndex < 0 || targetIndex >= newOrder.length) return;
-    [newOrder[index], newOrder[targetIndex]] = [newOrder[targetIndex], newOrder[index]];
-    setOrder(newOrder);
+    if (targetIndex < 0 || targetIndex >= newItems.length) return;
+    [newItems[index], newItems[targetIndex]] = [newItems[targetIndex], newItems[index]];
+    setItems(newItems);
 
     startTransition(async () => {
-      await reorderFrontSection(eventId, newOrder.map((ct) => ct.type));
+      await reorderFrontSection(eventId, newItems.map((i) => i.type));
+      router.refresh();
+    });
+  };
+
+  const handleAdd = async () => {
+    const label = addLabel.trim() || "New Section";
+    setAddLabel("");
+    setShowAddInput(false);
+
+    startTransition(async () => {
+      await addFrontSectionItem(eventId, label);
+      router.refresh();
+    });
+  };
+
+  const handleDelete = async (item: SectionItem) => {
+    if (!item.content) return;
+    startTransition(async () => {
+      await deleteFrontSectionItem(item.content!.id);
       router.refresh();
     });
   };
 
   return (
     <div className="space-y-3">
-      {order.map((ct, index) => {
-        const content = contentMap[ct.type] ?? null;
-        return (
-          <div key={ct.type} className="flex gap-2 items-start">
-            {/* Position number + move controls */}
-            <div className="flex flex-col items-center gap-0.5 pt-3 min-w-[36px]">
-              <span className="text-xs font-semibold text-muted-foreground tabular-nums leading-none mb-1">
-                {index + 1}
-              </span>
-              <Button
-                variant="ghost"
-                size="icon"
-                className="h-6 w-6"
-                onClick={() => move(index, "up")}
-                disabled={index === 0 || isPending}
-                title="Move up"
-              >
-                <ChevronUp className="h-3.5 w-3.5" />
-              </Button>
-              <Button
-                variant="ghost"
-                size="icon"
-                className="h-6 w-6"
-                onClick={() => move(index, "down")}
-                disabled={index === order.length - 1 || isPending}
-                title="Move down"
-              >
-                <ChevronDown className="h-3.5 w-3.5" />
-              </Button>
-            </div>
-
-            {/* Card */}
-            <div className="flex-1">
-              <FrontSectionCard
-                eventId={eventId}
-                contentType={ct.type}
-                label={ct.label}
-                description={ct.description}
-                defaultTitle={ct.defaultTitle}
-                content={content}
-                totalFrontPages={totalFrontPages}
-              />
-            </div>
+      {items.map((item, index) => (
+        <div key={item.type} className="flex gap-2 items-start">
+          {/* Position + move controls */}
+          <div className="flex flex-col items-center gap-0.5 pt-3 min-w-[36px]">
+            <span className="text-xs font-semibold text-muted-foreground tabular-nums leading-none mb-1">
+              {index + 1}
+            </span>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-6 w-6"
+              onClick={() => move(index, "up")}
+              disabled={index === 0 || isPending}
+              title="Move up"
+            >
+              <ChevronUp className="h-3.5 w-3.5" />
+            </Button>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-6 w-6"
+              onClick={() => move(index, "down")}
+              disabled={index === items.length - 1 || isPending}
+              title="Move down"
+            >
+              <ChevronDown className="h-3.5 w-3.5" />
+            </Button>
           </div>
-        );
-      })}
+
+          {/* Card */}
+          <div className="flex-1">
+            <FrontSectionCard
+              eventId={eventId}
+              contentType={item.type}
+              label={item.label}
+              description={item.description}
+              defaultTitle={item.defaultTitle}
+              content={item.content}
+              totalFrontPages={totalFrontPages}
+              isCustom={item.isCustom}
+            />
+          </div>
+
+          {/* Delete button for custom sections */}
+          {item.isCustom && item.content && (
+            <div className="pt-3">
+              <AlertDialog>
+                <AlertDialogTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-7 w-7 text-muted-foreground hover:text-destructive"
+                    disabled={isPending}
+                    title="Remove section"
+                  >
+                    <Trash2 className="h-3.5 w-3.5" />
+                  </Button>
+                </AlertDialogTrigger>
+                <AlertDialogContent>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>Remove section?</AlertDialogTitle>
+                    <AlertDialogDescription>
+                      This will permanently delete &quot;{item.label}&quot; and all its content. This cannot be undone.
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                    <AlertDialogAction
+                      className="bg-destructive hover:bg-destructive/90"
+                      onClick={() => handleDelete(item)}
+                    >
+                      Remove
+                    </AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
+            </div>
+          )}
+        </div>
+      ))}
+
+      {/* Add Section */}
+      <div className="pl-10 pt-1">
+        {showAddInput ? (
+          <div className="flex items-center gap-2">
+            <Input
+              autoFocus
+              value={addLabel}
+              onChange={(e) => setAddLabel(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") handleAdd();
+                if (e.key === "Escape") { setShowAddInput(false); setAddLabel(""); }
+              }}
+              placeholder="Section name…"
+              className="h-8 text-sm max-w-[220px]"
+            />
+            <Button size="sm" onClick={handleAdd} disabled={isPending}>Add</Button>
+            <Button size="sm" variant="ghost" onClick={() => { setShowAddInput(false); setAddLabel(""); }}>
+              Cancel
+            </Button>
+          </div>
+        ) : (
+          <Button
+            variant="outline"
+            size="sm"
+            className="gap-1.5"
+            onClick={() => setShowAddInput(true)}
+            disabled={isPending}
+          >
+            <Plus className="h-3.5 w-3.5" />
+            Add Section
+          </Button>
+        )}
+      </div>
     </div>
   );
 }
