@@ -19,9 +19,14 @@ const AdSchema = z.object({
   submittedFiles: z.array(z.string()).default([]),
 });
 
-async function getNextAdCode() {
-  const count = await prisma.ad.count();
-  return `AD-${String(count + 1).padStart(4, "0")}`;
+async function getNextAdCode(): Promise<string> {
+  // Use max existing code rather than count so deletions never cause collisions
+  const last = await prisma.ad.findFirst({
+    orderBy: { adCode: "desc" },
+    select: { adCode: true },
+  });
+  const lastNum = last ? parseInt(last.adCode.replace("AD-", ""), 10) : 0;
+  return `AD-${String(lastNum + 1).padStart(4, "0")}`;
 }
 
 export async function createAd(data: z.infer<typeof AdSchema>) {
