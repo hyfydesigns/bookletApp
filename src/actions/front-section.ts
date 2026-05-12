@@ -101,7 +101,27 @@ export async function getFrontSectionContents(eventId: string) {
   }
   return prisma.frontSectionContent.findMany({
     where: { eventId },
-    orderBy: { contentType: "asc" },
+    orderBy: { createdAt: "asc" },
     include: { submittedBy: { select: { name: true } } },
   });
+}
+
+export async function reorderFrontSection(eventId: string, orderedTypes: string[]) {
+  await requireAdmin();
+  await prisma.event.update({
+    where: { id: eventId },
+    data: { frontSectionOrder: orderedTypes },
+  });
+  revalidatePath(`/admin/events/${eventId}/front-section`);
+  revalidatePath(`/events/${eventId}/front-section`);
+}
+
+export async function updateFrontSectionPageNumber(id: string, pageNumber: number | null) {
+  await requireAdmin();
+  const content = await prisma.frontSectionContent.update({
+    where: { id },
+    data: { pageNumber },
+  });
+  revalidatePath(`/admin/events/${content.eventId}/front-section`);
+  return content;
 }

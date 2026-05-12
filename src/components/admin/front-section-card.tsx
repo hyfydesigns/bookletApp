@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useForm } from "react-hook-form";
-import { upsertFrontSectionContent, updateContentStatus } from "@/actions/front-section";
+import { upsertFrontSectionContent, updateContentStatus, updateFrontSectionPageNumber } from "@/actions/front-section";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -12,7 +12,7 @@ import { ContentStatusBadge } from "@/components/shared/status-badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { UploadButton } from "@/lib/uploadthing";
-import { Edit, FileText, ExternalLink, Image, Users, List, Star, Info, X } from "lucide-react";
+import { Edit, FileText, ExternalLink, Image, Users, List, Star, Info, X, BookOpen } from "lucide-react";
 import { useRouter } from "next/navigation";
 import type { LucideIcon } from "lucide-react";
 
@@ -36,12 +36,14 @@ interface FrontSectionCardProps {
   label: string;
   description: string;
   defaultTitle: string;
+  totalFrontPages?: number;
   content: {
     id: string;
     title: string;
     bodyText: string | null;
     fileUrls: string[];
     status: string;
+    pageNumber: number | null;
     adminNotes: string | null;
   } | null;
 }
@@ -52,6 +54,7 @@ export function FrontSectionCard({
   label,
   description,
   defaultTitle,
+  totalFrontPages,
   content,
 }: FrontSectionCardProps) {
   const [editOpen, setEditOpen] = useState(false);
@@ -59,8 +62,23 @@ export function FrontSectionCard({
   const [fileUrls, setFileUrls] = useState<{ url: string; name: string }[]>(
     (content?.fileUrls ?? []).map((url, i) => ({ url, name: `File ${i + 1}` }))
   );
+  const [pageNum, setPageNum] = useState<string>(content?.pageNumber?.toString() ?? "");
+  const [savingPage, setSavingPage] = useState(false);
   const router = useRouter();
   const Icon = ICON_MAP[contentType] ?? FileText;
+
+  const handlePageNumberSave = async () => {
+    if (!content) return;
+    const parsed = pageNum.trim() === "" ? null : parseInt(pageNum, 10);
+    if (parsed !== null && (isNaN(parsed) || parsed < 1)) return;
+    setSavingPage(true);
+    try {
+      await updateFrontSectionPageNumber(content.id, parsed);
+      router.refresh();
+    } finally {
+      setSavingPage(false);
+    }
+  };
 
   const { register, handleSubmit, reset } = useForm({
     defaultValues: {
@@ -178,7 +196,15 @@ export function FrontSectionCard({
               <p className="text-xs text-muted-foreground">{description}</p>
             </div>
           </div>
-          <ContentStatusBadge status={content?.status ?? "pending"} />
+          <div className="flex items-center gap-2">
+            {content?.pageNumber != null && (
+              <span className="inline-flex items-center gap-1 text-xs bg-muted px-1.5 py-0.5 rounded font-medium">
+                <BookOpen className="h-3 w-3" />
+                Pg {content.pageNumber}
+              </span>
+            )}
+            <ContentStatusBadge status={content?.status ?? "pending"} />
+          </div>
         </div>
       </CardHeader>
       <CardContent className="space-y-3">
@@ -219,6 +245,22 @@ export function FrontSectionCard({
                   <SelectItem value="done">Done</SelectItem>
                 </SelectContent>
               </Select>
+              {/* Page number input */}
+              <div className="flex items-center gap-1">
+                <BookOpen className="h-3.5 w-3.5 text-muted-foreground flex-shrink-0" />
+                <input
+                  type="number"
+                  min={1}
+                  max={totalFrontPages ?? 99}
+                  value={pageNum}
+                  onChange={(e) => setPageNum(e.target.value)}
+                  onBlur={handlePageNumberSave}
+                  onKeyDown={(e) => e.key === "Enter" && handlePageNumberSave()}
+                  placeholder="Pg#"
+                  disabled={savingPage}
+                  className="w-12 h-8 text-xs text-center border rounded-md bg-background px-1 disabled:opacity-50 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                />
+              </div>
               <Dialog open={editOpen} onOpenChange={setEditOpen}>
                 <DialogTrigger asChild>
                   <Button variant="outline" size="sm"><Edit className="h-3.5 w-3.5" /></Button>

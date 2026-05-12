@@ -116,8 +116,9 @@ model Event {
   location          String?
   theme             String?
   totalPages        Int         @default(20)
-  frontSectionPages Int         @default(4)
-  status            EventStatus @default(draft)
+  frontSectionPages   Int         @default(4)
+  frontSectionOrder   String[]    @default([])
+  status              EventStatus @default(draft)
   notes             String?
   deletedAt         DateTime?
   createdById       String
@@ -140,6 +141,7 @@ model FrontSectionContent {
   bodyText      String?
   fileUrls      String[]      @default([])
   status        ContentStatus @default(pending)
+  pageNumber    Int?
   submittedById String?
   adminNotes    String?
   createdAt     DateTime      @default(now())

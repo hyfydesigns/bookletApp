@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { ArrowLeft } from "lucide-react";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { FrontSectionCard } from "@/components/admin/front-section-card";
+import { FrontSectionOrderableList } from "@/components/admin/front-section-orderable-list";
 
 const CONTENT_TYPES = [
   { type: "president_photo", label: "Cover Page", description: "Booklet cover with photo", defaultTitle: "Cover Page" },
@@ -35,26 +35,23 @@ export default async function FrontSectionPage({ params }: { params: Promise<{ i
         </Link>
         <div>
           <h2 className="text-2xl font-bold">Front Section</h2>
-          <p className="text-muted-foreground">{event.name} · {doneCount}/{CONTENT_TYPES.length} complete</p>
+          <p className="text-muted-foreground">
+            {event.name} · {doneCount}/{CONTENT_TYPES.length} complete · {event.frontSectionPages} page{event.frontSectionPages !== 1 ? "s" : ""}
+          </p>
         </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        {CONTENT_TYPES.map(({ type, label, description, defaultTitle }) => {
-          const content = contentMap[type as keyof typeof contentMap];
-          return (
-            <FrontSectionCard
-              key={type}
-              eventId={id}
-              contentType={type}
-              label={label}
-              description={description}
-              defaultTitle={defaultTitle}
-              content={content ?? null}
-            />
-          );
-        })}
-      </div>
+      <p className="text-xs text-muted-foreground">
+        Use the arrows to reorder sections. Set a page number on each card once content is submitted.
+      </p>
+
+      <FrontSectionOrderableList
+        eventId={id}
+        totalFrontPages={event.frontSectionPages}
+        contentTypes={CONTENT_TYPES}
+        contentMap={contentMap}
+        savedOrder={event.frontSectionOrder ?? []}
+      />
     </div>
   );
 }
