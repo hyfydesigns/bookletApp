@@ -8,16 +8,11 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ChevronUp, ChevronDown, Plus, Trash2 } from "lucide-react";
 import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogTrigger,
-} from "@/components/ui/alert-dialog";
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 
 export interface SectionItem {
   type: string;         // contentType key
@@ -51,6 +46,7 @@ export function FrontSectionOrderableList({
   const [isPending, startTransition] = useTransition();
   const [addLabel, setAddLabel] = useState("");
   const [showAddInput, setShowAddInput] = useState(false);
+  const [confirmDelete, setConfirmDelete] = useState<SectionItem | null>(null);
   const router = useRouter();
 
   const move = (index: number, direction: "up" | "down") => {
@@ -77,8 +73,10 @@ export function FrontSectionOrderableList({
     });
   };
 
-  const handleDelete = async (item: SectionItem) => {
-    if (!item.content) return;
+  const handleDeleteConfirmed = async () => {
+    if (!confirmDelete?.content) return;
+    const item = confirmDelete;
+    setConfirmDelete(null);
     startTransition(async () => {
       await deleteFrontSectionItem(item.content!.id);
       router.refresh();
@@ -133,40 +131,45 @@ export function FrontSectionOrderableList({
           {/* Delete button for custom sections */}
           {item.isCustom && item.content && (
             <div className="pt-3">
-              <AlertDialog>
-                <AlertDialogTrigger asChild>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="h-7 w-7 text-muted-foreground hover:text-destructive"
-                    disabled={isPending}
-                    title="Remove section"
-                  >
-                    <Trash2 className="h-3.5 w-3.5" />
-                  </Button>
-                </AlertDialogTrigger>
-                <AlertDialogContent>
-                  <AlertDialogHeader>
-                    <AlertDialogTitle>Remove section?</AlertDialogTitle>
-                    <AlertDialogDescription>
-                      This will permanently delete &quot;{item.label}&quot; and all its content. This cannot be undone.
-                    </AlertDialogDescription>
-                  </AlertDialogHeader>
-                  <AlertDialogFooter>
-                    <AlertDialogCancel>Cancel</AlertDialogCancel>
-                    <AlertDialogAction
-                      className="bg-destructive hover:bg-destructive/90"
-                      onClick={() => handleDelete(item)}
-                    >
-                      Remove
-                    </AlertDialogAction>
-                  </AlertDialogFooter>
-                </AlertDialogContent>
-              </AlertDialog>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-7 w-7 text-muted-foreground hover:text-destructive"
+                disabled={isPending}
+                title="Remove section"
+                onClick={() => setConfirmDelete(item)}
+              >
+                <Trash2 className="h-3.5 w-3.5" />
+              </Button>
             </div>
           )}
         </div>
       ))}
+
+      {/* Delete confirmation dialog */}
+      <Dialog open={!!confirmDelete} onOpenChange={(open) => { if (!open) setConfirmDelete(null); }}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle>Remove section?</DialogTitle>
+          </DialogHeader>
+          <p className="text-sm text-muted-foreground">
+            This will permanently delete &quot;{confirmDelete?.label}&quot; and all its content. This cannot be undone.
+          </p>
+          <div className="flex gap-3 pt-2">
+            <Button variant="outline" className="flex-1" onClick={() => setConfirmDelete(null)}>
+              Cancel
+            </Button>
+            <Button
+              variant="destructive"
+              className="flex-1"
+              onClick={handleDeleteConfirmed}
+              disabled={isPending}
+            >
+              Remove
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
 
       {/* Add Section */}
       <div className="pl-10 pt-1">
