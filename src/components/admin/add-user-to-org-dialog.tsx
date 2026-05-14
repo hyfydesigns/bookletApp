@@ -2,13 +2,13 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { addUserToOrganizationByEmail, removeUserFromOrganization } from "@/actions/users";
+import { addUserToOrganizationByEmail, removeUserFromOrganization, resendInvite } from "@/actions/users";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { UserPlus, X, Users } from "lucide-react";
+import { UserPlus, X, Users, Mail, Check } from "lucide-react";
 
 interface OrgMember {
   id: string;
@@ -45,6 +45,42 @@ function RemoveButton({ userId, organizationId }: { userId: string; organization
     >
       <X className="h-3.5 w-3.5" />
     </Button>
+  );
+}
+
+function ResendInviteButton({ email, organizationId }: { email: string; organizationId: string }) {
+  const [loading, setLoading] = useState(false);
+  const [sent, setSent] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const handleResend = async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      await resendInvite(email, organizationId);
+      setSent(true);
+      setTimeout(() => setSent(false), 3000);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to resend");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div className="flex items-center gap-1">
+      {error && <span className="text-xs text-destructive">{error}</span>}
+      <Button
+        variant="ghost"
+        size="sm"
+        onClick={handleResend}
+        disabled={loading || sent}
+        title="Resend invite email"
+        className={`h-7 w-7 p-0 ${sent ? "text-green-600" : "text-muted-foreground hover:text-primary"}`}
+      >
+        {sent ? <Check className="h-3.5 w-3.5" /> : <Mail className="h-3.5 w-3.5" />}
+      </Button>
+    </div>
   );
 }
 
@@ -139,7 +175,10 @@ export function OrgMembersCard({ organizationId, members }: AddUserToOrgDialogPr
                     <p className="text-sm font-medium">{user.name}</p>
                     <p className="text-xs text-muted-foreground">{user.email}</p>
                   </div>
-                  <RemoveButton userId={user.id} organizationId={organizationId} />
+                  <div className="flex items-center gap-0.5">
+                    <ResendInviteButton email={user.email} organizationId={organizationId} />
+                    <RemoveButton userId={user.id} organizationId={organizationId} />
+                  </div>
                 </div>
               ))}
             </div>

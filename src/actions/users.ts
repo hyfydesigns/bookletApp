@@ -82,6 +82,17 @@ export async function addUserToOrganizationByEmail(
   return { invited: true, name: null };
 }
 
+export async function resendInvite(email: string, organizationId: string) {
+  await requireAdmin();
+  const supabase = getAdminClient();
+  const { error } = await supabase.auth.admin.inviteUserByEmail(email, {
+    data: { organizationId },
+    redirectTo: `${process.env.NEXT_PUBLIC_APP_URL}/auth/confirm`,
+  });
+  if (error) throw new Error(`Failed to resend invite: ${error.message}`);
+  return { success: true };
+}
+
 export async function removeUserFromOrganization(userId: string, organizationId: string) {
   await requireAdmin();
   const updated = await prisma.user.update({
