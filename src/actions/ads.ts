@@ -256,10 +256,27 @@ export async function updateAd(id: string, data: Partial<z.infer<typeof AdSchema
 }
 
 export async function deleteAd(id: string) {
-  await requireAdmin();
-  const ad = await prisma.ad.delete({ where: { id } });
-  revalidatePath(`/admin/events/${ad.eventId}/ads`);
-  return ad;
+  const user = await requireOrganizer();
+
+  const ad = await prisma.ad.findUnique({
+    where: { id },
+    include: { event: true },
+  });
+  if (!ad) throw new Error("Ad not found");
+
+  if (user.role !== "admin") {
+    if (ad.adContentStatus !== "pending") {
+      throw new Error("Cannot delete an ad that is no longer pending");
+    }
+    if (user.organizationId !== ad.event.organizationId) {
+      throw new Error("Unauthorized");
+    }
+  }
+
+  const deleted = await prisma.ad.delete({ where: { id } });
+  revalidatePath(`/admin/events/${deleted.eventId}/ads`);
+  revalidatePath(`/events/${deleted.eventId}/ads`);
+  return deleted;
 }
 
 export async function getAds(eventId: string) {

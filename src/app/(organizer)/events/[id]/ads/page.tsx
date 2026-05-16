@@ -8,6 +8,7 @@ import { ArrowLeft, Plus } from "lucide-react";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { SubmitAdDialog } from "@/components/organizer/submit-ad-dialog";
+import { DeleteAdButton } from "@/components/organizer/delete-ad-button";
 
 export default async function OrganizerAdsPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -62,6 +63,12 @@ export default async function OrganizerAdsPage({ params }: { params: Promise<{ i
                   <Link href={`/events/${id}/ads/${ad.id}`}>
                     <Button variant="ghost" size="sm">View</Button>
                   </Link>
+                  {ad.adContentStatus === "pending" && (
+                    <DeleteAdButton
+                      adId={ad.id}
+                      advertiserName={ad.advertiserName}
+                    />
+                  )}
                 </div>
               </div>
             </CardContent>

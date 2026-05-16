@@ -9,6 +9,7 @@ import { notFound } from "next/navigation";
 import { OrganizerPaymentUpdate } from "@/components/organizer/payment-update";
 import { OrganizerEditAdDialog } from "@/components/organizer/edit-ad-dialog";
 import { PageAssignmentForm } from "@/components/admin/page-assignment-form";
+import { DeleteAdButton } from "@/components/organizer/delete-ad-button";
 
 export default async function OrganizerAdDetailPage({
   params,
@@ -34,6 +35,14 @@ export default async function OrganizerAdDetailPage({
         </div>
         <div className="flex items-center gap-2">
           <OrganizerEditAdDialog ad={{ id: ad.id, advertiserName: ad.advertiserName, contactPerson: ad.contactPerson, contactEmail: ad.contactEmail, contactPhone: ad.contactPhone, adMessage: ad.adMessage, notes: ad.notes, submittedFiles: ad.submittedFiles, adContentStatus: ad.adContentStatus }} />
+          {ad.adContentStatus === "pending" && (
+            <DeleteAdButton
+              adId={ad.id}
+              advertiserName={ad.advertiserName}
+              redirectTo={`/events/${id}/ads`}
+              variant="full"
+            />
+          )}
           <AdStatusBadge status={ad.adContentStatus} />
           <PaymentBadge status={ad.paymentStatus} />
         </div>
